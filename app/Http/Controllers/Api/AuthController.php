@@ -1,0 +1,481 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Http\ServicesLayer\Api\BranchServices\BranchService;
+use App\Http\ServicesLayer\Api\WhatsAppServices\WhatsAppService;
+use App\Models\Branch;
+use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Tymon\JWTAuth\Facades\JWTAuth;
+use Illuminate\Support\Facades\Hash as FacadesHash;
+use Illuminate\Support\Facades\Notification as FacadesNotification;
+use App\Notifications\UpdateEmail;
+
+
+class AuthController extends Controller
+{
+    public $user;
+    public $branch;
+    public $branchService;
+    public $whatsAppService;
+
+    public function __construct(User $user, Branch $branch, BranchService $branchService, WhatsAppService $whatsAppService)
+    {
+        $this->user = $user;
+        $this->branch = $branch;
+        $this->branchService = $branchService;
+        $this->whatsAppService = $whatsAppService;
+        $this->middleware('auth:api', ['except' => ['login', 'register', 'mobileCheck', 'regenerateCode', 'sendResetCode', 'verifyResetCode', 'resetPassword','changePassword']]);
+    }
+
+    public function register(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|unique:users,email|max:50',
+            'mobile' => 'required|unique:users,mobile|max:50',
+            'password' => 'required|confirmed|max:30',
+            'name' => 'required|string|max:60',
+            'user_type' => 'required|in:1,2',
+
+            'branch.name' => 'required_if:user_type,1|string|max:255',
+            'branch.mobile' => 'required_if:user_type,1|string|max:255',
+            'branch.location' => 'required_if:user_type,1|string|max:1550',
+            //'branch.map_location' => 'required_if:user_type,1|string|max:1550',
+            // 'branch.category_id' => 'required_if:user_type,1|integer|exists:categories,id',
+            'branch.imgs' => 'required_if:user_type,1|array',
+            'branch.imgs.*' => 'file|image|max:5120',
+
+            'branch.category_id' => 'nullable|integer|exists:categories,id',
+
+            'branch.payments' => 'nullable|array',
+            'branch.payments.*' => 'nullable|exists:payment_methods,id',
+            'branch.email' => 'nullable|string|max:255',
+            'branch.lat' => 'required_if:user_type,1|string|max:255',
+            'branch.lon' => 'required_if:user_type,1|string|max:255',
+            'branch.face' => 'nullable|string|max:1550',
+            'branch.insta' => 'nullable|string|max:1550',
+            'branch.tiktok' => 'nullable|string|max:1550',
+            'branch.website' => 'nullable|string|max:1550',
+            'branch.tax_card' => 'nullable|file|image|max:5120',
+            'branch.commercial_register' => 'nullable|file|image|max:5120',
+        ]);
+        if ($validator->fails()) {
+            return responseJson(400, "Bad Request", $validator->errors()->first());
+        }
+        if(!$request->hasFile('branch.imgs') == null && count($request->file('branch.imgs')) > 10){
+            return responseJson(500, "not accepted more than 10 imgs");
+        }
+        try {
+            DB::beginTransaction();
+
+            $active = $request->user_type == 1 ? 0 : 1;
+
+            $user = $this->user->create([
+                'email' => $request->email ?? null,
+                'mobile' => $request->mobile ?? null,
+                'name' => $request->name ?? null,
+                'password' => bcrypt($request->password) ?? null,
+                'user_type' => $request->user_type ?? null,
+                'code' => 1111,
+                'is_activate' => $active,
+                // 'code' => rand(1000, 9999),
+            ]);
+            if (isset($request->branch) && !is_null($request->branch)) {
+                if (!$request->hasFile('branch.tax_card') == null) {
+                    $tax_card = uploadIamge($request->file('branch.tax_card'), 'branches'); // function on helper file to upload file
+                }
+                if (!$request->hasFile('branch.commercial_register') == null) {
+                    $commercial_register = uploadIamge($request->file('branch.commercial_register'), 'branches'); // function on helper file to upload file
+                }
+                if (!$request->hasFile('branch.imgs') == null) {
+                    $imgs = uploadIamges($request->file('branch.imgs'), 'branches'); // function on helper file to upload file
+                }
+                // $coordinates = extractLatLong($request->branch['map_location'] ?? null);
+				$map_location = generateGoogleMapsLink($request->branch['lat'] , $request->branch['lon']);
+                $branch = $this->branch->create([
+					
+                    'name' => $request->branch['name'] ?? null,
+                    'mobile' => $request->branch['mobile'] ?? null,
+                    'location' => $request->branch['location'] ?? null,
+                    'map_location' => $map_location ?? null,
+                    'category_id' => $request->branch['category_id'] ?? null,
+                    'email' => $request->branch['email'] ?? null,
+                    'face' => $request->branch['face'] ?? null,
+                    'insta' => $request->branch['insta'] ?? null,
+                    'tiktok' => $request->branch['tiktok'] ?? null,
+                    'website' => $request->branch['website'] ?? null,
+                    'imgs' => $imgs ?? null,
+                    'tax_card' => $tax_card ?? null,
+                    'commercial_register' => $commercial_register ?? null,
+                    'uuid' => generateCustomUUID(),
+                    'owner_id' => $user->id,
+                    'expire_at' => now()->addMonths(6),
+                    'lat' => $request->branch['lat'] ?? null,
+                    'lon' => $request->branch['lon'] ?? null,
+                ]);
+                if (isset($request->branch['payments']) && count($request->branch['payments']) > 0) {
+                    $branch->payments()->sync(array_values($request->branch['payments']));
+                }
+            }
+            DB::commit();
+        } catch (\Exception $e) {
+
+
+            DB::rollback();
+
+            return responseJson(500, "Internal Server Error");
+        }
+        return responseJson(200, "success");
+    }
+
+    public function mobileCheck(Request $request)
+    {
+
+        $validator = Validator::make($request->all(), [
+            'code' => 'required|exists:users,code|max:4',
+            'mobile' => 'required|exists:users,mobile|max:60',
+        ]);
+        if ($validator->fails()) {
+            return responseJson(400, "Bad Request", $validator->errors()->first());
+        }
+        try {
+            $user = $this->user->where('mobile', $request->mobile)->where('code', $request->code)->first();
+            if(!is_null($user->deleted_at)){
+                return responseJson(401, "This Account Not Activate , Please Contact Technical Support");
+            }
+            DB::beginTransaction();
+            $user->update([
+                'code' => null,
+                'mobile_verified_at' =>  now(),
+            ]);
+            $user->token = JWTAuth::customClaims(['exp' => Carbon::now()->addYears(20)->timestamp])->fromUser($user);
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollback();
+            return responseJson(500, "Internal Server Error");
+        }
+        return responseJson(200, "success", $user->only(['id', 'name', 'mobile', 'email', 'user_type', 'token']));
+    }
+
+    public function regenerateCode(Request $request)
+    {
+
+        $validator = Validator::make($request->all(), [
+            'mobile' => 'required|exists:users,mobile|max:60',
+        ]);
+        if ($validator->fails()) {
+            return responseJson(400, "Bad Request", $validator->errors()->first());
+        }
+
+        $user = $this->user->where('mobile', $request->mobile)->first();
+        if(!is_null($user->deleted_at)){
+            return responseJson(401, "This Account Not Activate , Please Contact Technical Support");
+        }
+        try {
+
+            DB::beginTransaction();
+            $user->update([
+                'code' => 1111,
+                // 'code' => rand(1000, 9999),
+            ]);
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollback();
+            return responseJson(500, "Internal Server Error");
+        }
+        return responseJson(200, "success");
+    }
+
+    public function login(Request $request)
+    {
+
+        $validator = Validator::make($request->all(), [
+            'mobile' => 'required|exists:users,mobile|max:60',
+            'password' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return responseJson(400, "Bad Request", $validator->errors()->first());
+        }
+
+        $user = $this->user->where('mobile', $request->mobile)->first();
+        if(!is_null($user->deleted_at)){
+            return responseJson(401, "This Account Not Activate , Please Contact Technical Support");
+        }
+        if(!$user->is_activate){
+            return responseJson(401, "This Account Not Verified , Please Contact Technical Support");
+        }
+        try {
+            if(!FacadesHash::check($request->password, $user->password)){
+                return response()->json(['error' => 'Invalid Credentials'], 401);
+            }
+            $user->token = JWTAuth::customClaims(['exp' => Carbon::now()->addYears(20)->timestamp])->fromUser($user);
+        } catch (\Exception $e) {
+            return responseJson(500, "Internal Server Error");
+        }
+        return responseJson(200, "success", $user->only(['id', 'name', 'mobile', 'email', 'user_type', 'token']));
+    }
+
+    public function me()
+    {
+        return responseJson(200, "success", auth()->user()->only(['id', 'name', 'mobile', 'email', 'user_type']));
+    }
+
+    public function userBranches()
+    {
+        $branches['branches'] = $this->branchService->userBranches();
+        return responseJson(200, "success", $branches);
+    }
+
+    public function getFavorites()
+    {
+        try {
+            $branches['branches'] = $this->branchService->getFavorites() ?? [];
+            return responseJson(200, "success", $branches);
+        } catch (\Exception $e) {
+            return responseJson(500, "Internal Server Error", $e->getMessage());
+        }
+    }
+
+    public function addFavorites($id = 0)
+    {
+        try {
+            if($id > 0) {
+                return $this->branchService->favorites($id);
+            }
+            return responseJson(200, "success");
+        } catch (\Exception $e) {
+            return responseJson(500, "Internal Server Error");
+        }
+    }
+
+    public function logout()
+    {
+        auth()->logout();
+        $data['token'] = null;
+        return responseJson(200, "successfully logged out", $data);
+    }
+
+    public function refresh()
+    {
+        return responseJson(200, "success", auth()->refresh());
+    }
+
+    public function userUpdate(Request $request)
+    {
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:254',
+            // 'email' => 'required|string|max:254|unique:users,email,' . auth()->user()->id,
+        ]);
+        if ($validator->fails()) {
+            return responseJson(400, "Bad Request", $validator->errors()->first());
+        }
+
+        $user = auth()->user();
+        $request->name ? $user->name = $request->name : '';
+        $request->email ? $user->email = $request->email : '';
+        $user->save();
+        return responseJson(200, "success");
+    }
+
+    public function changeMobileNum(Request $request)
+    {
+
+        $validator = Validator::make($request->all(), [
+            'mobile' => 'required|unique:users,mobile|max:60'
+        ]);
+        if ($validator->fails()) {
+            return responseJson(400, "Bad Request", $validator->errors()->first());
+        }
+
+        $user = auth()->user();
+        try {
+
+            DB::beginTransaction();
+            $user->update([
+                'mobile' => $request->mobile,
+                'mobile_verified_at' =>  null,
+                'code' => 1111,
+                // 'code' => rand(1000, 9999),
+            ]);
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollback();
+            return responseJson(500, "Internal Server Error");
+        }
+        return responseJson(200, "success");
+    }
+
+    public function deleteAccount()
+    {
+        $user = auth()->guard('api')->user();
+        $user->deleted_at = date("Y-m-d h:m:s");
+        $user->save();
+        return responseJson(200, "success");
+    }
+
+
+
+///////////////
+
+    public function sendResetCode(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'mobile' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return responseJson(400, "Bad Request", $validator->errors()->first());
+        }
+
+        $user = $this->user->where('mobile', $request->mobile)->first();
+        if (!$user) {
+            return responseJson(404, "User not found");
+        }
+
+        try {
+            $user->update(['code' => 1111]);
+
+        } catch (\Exception $e) {
+            return responseJson(500, "Internal Server Error");
+        }
+
+        return responseJson(200, "Reset code sent successfully.");
+    }
+
+    public function verifyResetCode(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'mobile' => 'required|exists:users,mobile|max:60',
+            'code' => 'required|exists:users,code|max:4',
+        ]);
+        if ($validator->fails()) {
+            return responseJson(400, "Bad Request", $validator->errors()->first());
+        }
+
+        $user = $this->user->where('mobile', $request->mobile)->first();
+        if (!$user || !is_null($user->deleted_at) || $user->code != $request->code) {
+            return responseJson(401, "There Is Something Wrong, Please Contact Technical Support");
+        }
+
+        return responseJson(200, "Code verified successfully.");
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'mobile' => 'required|exists:users,mobile|max:60',
+            'code' => 'required|exists:users,code|max:4',
+            'password' => 'required|confirmed|max:30',
+        ]);
+        if ($validator->fails()) {
+            return responseJson(400, "Bad Request", $validator->errors()->first());
+        }
+
+        $user = $this->user->where('mobile', $request->mobile)->first();
+        if (!$user || !is_null($user->deleted_at) || $user->code != $request->code) {
+            return responseJson(401, "This Account Not Activated, Please Contact Technical Support");
+        }
+
+        try {
+            $user->update([
+                'password' => bcrypt($request->password),
+                'code' => null,
+            ]);
+        } catch (\Exception $e) {
+            return responseJson(500, "Internal Server Error");
+        }
+        return responseJson(200, "Password reset successfully.");
+    }
+
+    public function changePassword(Request $request)
+    {
+        // التحقق من صحة البيانات المدخلة
+        $validator = Validator::make($request->all(), [
+            'old_password' => 'required',
+            'new_password' => 'required|max:30|confirmed',
+        ]);
+
+        if ($validator->fails()) {
+            return responseJson(400, "Bad Request", $validator->errors()->first());
+        }
+
+        $user = auth()->user();
+
+        if (!$user) {
+            return responseJson(401, "Unauthorized: User not logged in.");
+        }
+
+        if (!Hash::check($request->old_password, $user->password)) {
+            return responseJson(400, "Old password is incorrect.");
+        }
+
+        try {
+            $user->update([
+                'password' => bcrypt($request->new_password),
+            ]);
+        } catch (\Exception $e) {
+            return responseJson(500, "Internal Server Error", $e->getMessage());
+        }
+
+        return responseJson(200, "Password changed successfully.");
+    }
+
+    public function updateEmail(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|max:255|unique:users,email,' . auth()->user()->id,
+        ]);
+        if ($validator->fails()) {
+            return responseJson(400, "Bad Request", $validator->errors()->first());
+        }
+
+        $user = User::find(auth()->user()->id);
+        try {
+            $code = rand(1000, 9999);
+            $user->update([
+                'code' => $code,
+            ]);
+            FacadesNotification::route('mail', $request->email)->notify(new UpdateEmail($code));
+            return responseJson(200, "check your mail");
+
+        } catch (\Exception $e) {
+            return responseJson(500, "Internal Server Error", $e->getMessage());
+        }
+        return responseJson(200, "success");
+    }
+    public function verifyEmail(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|max:255',
+            'code' => 'required|max:4',
+        ]);
+        if ($validator->fails()) {
+            return responseJson(400, "Bad Request", $validator->errors()->first());
+        }
+
+        $user = $this->user->where('id', auth()->user()->id)
+            ->where('code', $request->code)
+        ->first();
+        if ($user->code != $request->code) {
+            return responseJson(401, "Invaild OTP");
+        }
+
+        try {
+            $user->update([
+                'code' => null,
+                'email' => $request->email,
+                'email_verified_at' => now(),
+            ]);
+        } catch (\Exception $e) {
+            return responseJson(500, "Internal Server Error");
+        }
+        return responseJson(200, "Email updated successfully.");
+    }
+
+}

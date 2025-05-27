@@ -1,0 +1,90 @@
+{
+    "name": "orchestra/testbench-dusk",
+    "description": "Laravel Dusk Testing Helper for Packages Development",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Keoghan Litchfield",
+            "email": "keoghan@klever.co.uk",
+            "homepage": "https://klever.co.uk",
+            "role": "Developer"
+        },
+        {
+            "name": "Mior Muhammad Zaki",
+            "email": "crynobone@gmail.com",
+            "homepage": "https://github.com/crynobone",
+            "role": "Organization Maintainer"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Orchestra\\Testbench\\Dusk\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Orchestra\\Testbench\\Dusk\\Tests\\": "tests/",
+            "Workbench\\App\\": "workbench/app/",
+            "Workbench\\Database\\Factories\\": "workbench/database/factories/",
+            "Workbench\\Database\\Seeders\\": "workbench/database/seeders/"
+        }
+    },
+    "bin": [
+        "testbench-dusk"
+    ],
+    "require": {
+        "php": "^8.1",
+        "composer-runtime-api": "^2.2",
+        "konsulting/project-root": "^1.1",
+        "laravel/dusk": "^7.9",
+        "laravel/serializable-closure": "^1.0",
+        "orchestra/dusk-updater": "^2.2.1",
+        "orchestra/testbench": ">=8.10.0 <8.11.0",
+        "php-webdriver/webdriver": "^1.9"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.6",
+        "phpstan/phpstan": "^1.10.7",
+        "phpunit/phpunit": "^10.1"
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "8.0-dev"
+        }
+    },
+    "scripts": {
+        "post-autoload-dump": [
+            "@clear",
+            "@prepare",
+            "@dusk:install-chromedriver"
+        ],
+        "clear": "@php vendor/bin/testbench package:purge-skeleton --ansi",
+        "prepare": "@php vendor/bin/testbench package:discover --ansi",
+        "build": "@php vendor/bin/testbench workbench:build --ansi",
+        "dusk:install-chromedriver": "@php vendor/bin/dusk-updater detect --auto-update --ansi",
+        "serve": [
+            "@build",
+            "@php vendor/bin/testbench serve"
+        ],
+        "lint": [
+            "@php vendor/bin/pint",
+            "@php vendor/bin/phpstan analyse"
+        ],
+        "test": "@php vendor/bin/phpunit -c ./ --color",
+        "ci": [
+            "@prepare",
+            "@dusk:install-chromedriver",
+            "@lint",
+            "@test"
+        ]
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "prefer-stable": true,
+    "minimum-stability": "dev"
+}

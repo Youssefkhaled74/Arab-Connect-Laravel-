@@ -1,0 +1,39 @@
+<?php
+
+namespace Laravel\Nova\Http\Controllers;
+
+use Illuminate\Routing\Controller;
+use Laravel\Nova\Http\Requests\ResourceUpdateOrUpdateAttachedRequest;
+use Laravel\Nova\Http\Resources\UpdateViewResource;
+
+class UpdateFieldController extends Controller
+{
+    /**
+     * List the update fields for the given resource.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function __invoke(ResourceUpdateOrUpdateAttachedRequest $request)
+    {
+        return UpdateViewResource::make()->toResponse($request);
+    }
+
+    /**
+     * Synchronize the field for updating.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function sync(ResourceUpdateOrUpdateAttachedRequest $request)
+    {
+        $resource = UpdateViewResource::make()->newResourceWith($request);
+
+        return response()->json(
+            $resource->updateFields($request)
+                ->filter(function ($field) use ($request) {
+                    return $request->query('field') === $field->attribute &&
+                            $request->query('component') === $field->dependentComponentKey();
+                })->each->syncDependsOn($request)
+                ->first()
+        );
+    }
+}
