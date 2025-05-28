@@ -32,6 +32,7 @@ Route::group(['middleware' => ['api']], function ($router) {
     Route::group(['prefix' => 'auth'], function ($router) {
         Route::post('register', [AuthController::class, 'register']); // for user or vendor
         Route::post('branches/store', [AuthController::class, 'addBranch'])->middleware('auth:api'); // for vendor only        Route::post('login', [AuthController::class, 'login']);
+        Route::post('login', [AuthController::class, 'login']);
         Route::post('regenerate-code', [AuthController::class, 'regenerateCode']);
         Route::post('email-check', [AuthController::class, 'emailCheck']);
 

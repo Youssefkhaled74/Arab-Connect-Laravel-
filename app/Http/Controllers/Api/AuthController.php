@@ -302,7 +302,7 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-
+        // dd($request->all());
         $validator = Validator::make($request->all(), [
             'mobile' => 'required|exists:users,mobile|max:60',
             'password' => 'required',
@@ -310,7 +310,6 @@ class AuthController extends Controller
         if ($validator->fails()) {
             return responseJson(400, "Bad Request", $validator->errors()->first());
         }
-
         $user = $this->user->where('mobile', $request->mobile)->first();
         if (!is_null($user->deleted_at)) {
             return responseJson(401, "This Account Not Activate , Please Contact Technical Support");

@@ -34,11 +34,11 @@ class BranchService
         return $this->branch->where('id', $id)->with([
             'payments',
             'days',
-            'related_branches' => function ($query) use($id) {
+            'related_branches' => function ($query) use ($id) {
                 $query->whereNotIn('id', [$id]);
             }
         ])
-        ->first();
+            ->first();
     }
 
     public function store($request)
@@ -82,7 +82,7 @@ class BranchService
             $days = [];
             foreach ($request->days as $day) {
                 if ((int)$day['day'] > 0 && 7 >= (int)$day['day']) {
-                    $days [] = [
+                    $days[] = [
                         'from' => (int)$day['off'] == 0 ? $day['from'] ?? '08:00' : '',
                         'to' => (int)$day['off'] == 0 ? $day['to'] ?? '22:00' : '',
                         'off' => $day['off'],
@@ -173,45 +173,45 @@ class BranchService
 
 
 
-    public function update($request, $id){
+    public function update($request, $id)
+    {
         $branch = $this->branch->where('id', $id)->where('owner_id', auth()->guard('api')->user()->id)->first();
         if (is_null($branch)) {
             return 0;
         }
-        // رفع الصور والملفات
+
+        // Handle single image upload
+        $img = $request->hasFile('img') ? uploadIamge($request->file('img'), 'branches') : $branch->img;
         $tax_card = $request->hasFile('tax_card') ? uploadIamge($request->file('tax_card'), 'branches') : $branch->tax_card;
         $commercial_register = $request->hasFile('commercial_register') ? uploadIamge($request->file('commercial_register'), 'branches') : $branch->commercial_register;
-        $imgs = '';
-        if($request->hasFile('new_imgs')){
-            $imgs = $this->processImages($request, $branch);
-            $imgs = $imgs ?  $imgs . ',' . $request->imgs ?? null : null;
-        }else {
-            $imgs = $request->imgs;
+
+        if ($request->has('lat') && $request->has('lon')) {
+            $map_location = generateGoogleMapsLink($request->lat, $request->lon);
+        } else {
+            $map_location = $branch->map_location;
         }
-		if($request->has('lat') && $request->has('lon')){
-			$map_location = generateGoogleMapsLink($request->lat , $request->lon);
-		}
+
         $branchChange = BranchChange::create([
             'branch_id' => $branch->id,
-            'name' => $request->name ?? null,
-            'mobile' => $request->mobile ?? null,
-            'location' => $request->location ?? null,
-            'map_location' => $map_location ?? null,
-            'email' => $request->email ?? null,
-            'face' => $request->face ?? null,
-            'insta' => $request->insta ?? null,
-            'tiktok' => $request->tiktok ?? null,
-            'website' => $request->website ?? null,
+            'name' => $request->name ?? $branch->name,
+            'mobile' => $request->mobile ?? $branch->mobile,
+            'location' => $request->location ?? $branch->location,
+            'map_location' => $map_location,
+            'email' => $request->email ?? $branch->email,
+            'face' => $request->face ?? $branch->face,
+            'insta' => $request->insta ?? $branch->insta,
+            'tiktok' => $request->tiktok ?? $branch->tiktok,
+            'website' => $request->website ?? $branch->website,
             'lon' => $request->lon ?? $branch->lon,
             'lat' => $request->lat ?? $branch->lat,
-            'imgs' =>   str_replace(env('APP_URL') . '/public/', '', $imgs),
+            'img' => $img,
             'tax_card' => $tax_card,
             'commercial_register' => $commercial_register,
-            // 'old_imgs' => str_replace(env('APP_URL').'/public/', '', $request->imgs),
-            'old_imgs' => null,
+            'country_id' => $request->country_id ?? $branch->country_id,
             'is_activate' => 0,
             'all_days' => $request->all_days ?? $branch->all_days,
         ]);
+
         if (isset($request->days) && count($request->days) > 0) {
             foreach ($request->days as $day) {
                 DayChange::create([
@@ -240,7 +240,7 @@ class BranchService
         if ($request->hasFile('new_imgs')) {
             $temporary_imgs = uploadIamges($request->file('new_imgs'), 'branches');
             $imgs .= ',' . $temporary_imgs;
-        }else {
+        } else {
             $imgs = $request->imgs;
         }
         return ltrim($imgs, ',');
@@ -260,10 +260,10 @@ class BranchService
     public function favorites($id)
     {
 
-        if(auth()->guard('api')->user()->favorites()->find($id)){
+        if (auth()->guard('api')->user()->favorites()->find($id)) {
             $this->removeFavorites($id);
             return responseJson(200, "success removed");
-        }else {
+        } else {
             $this->addFavorites($id);
             return responseJson(200, "success added");
         }
@@ -278,5 +278,4 @@ class BranchService
     {
         return auth()->user()->favorites()->detach($id);
     }
-
 }
