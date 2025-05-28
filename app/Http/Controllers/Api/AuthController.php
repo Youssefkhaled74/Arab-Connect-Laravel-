@@ -137,8 +137,8 @@ class AuthController extends Controller
             'password' => 'required|confirmed|max:30',
             'name' => 'required|string|max:60',
             'user_type' => 'required|in:1,2', // 1 = vendor, 2 = user
-            'country.name' => 'required|string|max:100',
-            'country.flag' => 'required|file|image|max:5120',
+            'country_id' => 'required|string|max:100',
+            // 'country.flag' => 'required|file|image|max:5120',
         ];
 
         $validator = Validator::make($request->all(), $rules);
