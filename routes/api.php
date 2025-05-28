@@ -19,16 +19,17 @@ use App\Http\Controllers\Api\ContactController;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
-  
+
 // Route::group(['middleware' => ['api', 'limitReq']], function ($router) {
 Route::group(['middleware' => ['api']], function ($router) {
-	Route::get('/return-true', function () {
-		return response()->json(false);
-	});
+    Route::get('/return-true', function () {
+        return response()->json(false);
+    });
     // package
     Route::get('packages', [PackageController::class, 'index']);
     Route::group(['prefix' => 'auth'], function ($router) {
-        Route::post('register', [AuthController::class, 'register']);
+        Route::post('register/user', [AuthController::class, 'registerUser']);
+        Route::post('register/vendor', [AuthController::class, 'registerVendor']);
         Route::post('login', [AuthController::class, 'login']);
         Route::post('regenerate-code', [AuthController::class, 'regenerateCode']);
         Route::post('mobile-check', [AuthController::class, 'mobileCheck']);

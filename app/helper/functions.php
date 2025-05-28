@@ -13,14 +13,13 @@ function deleteImage($filePath)
     return 0;
 }
 
-function responseJson($status, $msg, $data = null)
+function responseJson($status = 200, $msg = '', $data = null)
 {
-    $response = [
+    return response()->json([
         'status' => $status,
         'msg' => $msg,
-        'data' => $data
-    ];
-    return response()->json($response);
+        'data' => $data,
+    ], $status); // <-- This sets the HTTP status code
 }
 
 function generateCustomUUID()

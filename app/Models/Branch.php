@@ -18,7 +18,7 @@ class Branch extends Model implements HasMedia
     use InteractsWithMedia,Notifiable;
     protected $table = 'branches';
 	protected $fillable = [
-		'name', 'email', 'mobile', 'location', 'map_location', 'imgs', 'tax_card', 'commercial_register', 'face', 'insta', 'tiktok', 'website', 'category_id', 'uuid', 'owner_id', 'lon', 'lat', 'is_verified','deleted_at','expire_at','all_days',
+		'name', 'email', 'mobile','country_code' ,'location', 'map_location', 'imgs', 'tax_card', 'commercial_register', 'face', 'insta', 'tiktok', 'website', 'category_id', 'uuid', 'owner_id', 'lon', 'lat', 'is_verified','deleted_at','expire_at','all_days',
         'three_month_email_sent_at','one_month_email_sent_at'	];
 
     protected static $logAttributes = ['*']; 
