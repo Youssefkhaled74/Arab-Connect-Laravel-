@@ -299,15 +299,14 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        // dd($request->all());
         $validator = Validator::make($request->all(), [
-            'mobile' => 'required|exists:users,mobile|max:60',
+            'email' => 'required|exists:users,email|max:255',
             'password' => 'required',
         ]);
         if ($validator->fails()) {
             return responseJson(400, "Bad Request", $validator->errors()->first());
         }
-        $user = $this->user->where('mobile', $request->mobile)->first();
+        $user = $this->user->where('email', $request->email)->first();
         if (!is_null($user->deleted_at)) {
             return responseJson(401, "This Account Not Activate , Please Contact Technical Support");
         }
@@ -319,12 +318,24 @@ class AuthController extends Controller
                 return response()->json(['error' => 'Invalid Credentials'], 401);
             }
             $user->token = JWTAuth::customClaims(['exp' => Carbon::now()->addYears(20)->timestamp])->fromUser($user);
+
+            // Always return a full URL for the user photo, or a default image if not set
+            $imgUrl = $user->img
+                ? env('APP_URL') . '/uploads/' . $user->img
+                : env('APP_URL') . '/uploads/default.png';
         } catch (\Exception $e) {
             return responseJson(500, "Internal Server Error");
         }
-        return responseJson(200, "success", $user->only(['id', 'name', 'mobile', 'email', 'user_type', 'token']));
+        return responseJson(200, "success", [
+            'id' => $user->id,
+            'name' => $user->name,
+            'mobile' => $user->mobile,
+            'email' => $user->email,
+            'user_type' => $user->user_type,
+            'token' => $user->token,
+            'img' => $imgUrl,
+        ]);
     }
-
     public function me()
     {
         return responseJson(200, "success", auth()->user()->only(['id', 'name', 'mobile', 'email', 'user_type']));
@@ -578,5 +589,43 @@ class AuthController extends Controller
             return responseJson(500, "Internal Server Error");
         }
         return responseJson(200, "Email updated successfully.");
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public function uploadProfilePhoto(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'img' => 'required|file|image|max:5120',
+        ]);
+        if ($validator->fails()) {
+            return responseJson(400, "Bad Request", $validator->errors()->first());
+        }
+
+        $user = auth()->user();
+        try {
+            $imgPath = uploadIamge($request->file('img'), 'users');
+            $user->img = $imgPath;
+            $user->save();
+            $imgUrl = $user->img ? asset('uploads/' . $user->img) : null;
+            return responseJson(200, "Profile photo updated successfully.", ['img' => $imgUrl]);
+        } catch (\Exception $e) {
+            return responseJson(500, "Internal Server Error", $e->getMessage());
+        }
     }
 }

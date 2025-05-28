@@ -65,6 +65,7 @@ Route::group(['middleware' => ['api']], function ($router) {
             Route::get('refresh', [AuthController::class, 'refresh']);
             Route::post('/change-mobile-number', [AuthController::class, 'changeMobileNum']);
             Route::post('/update', [AuthController::class, 'userUpdate']);
+            Route::post('user/upload-photo', [AuthController::class, 'uploadProfilePhoto'])->middleware('auth:api');
             Route::post('logout', [AuthController::class, 'logout']);
             Route::get('delete-account', [AuthController::class, 'deleteAccount']);
             Route::post('update-email', [AuthController::class, 'updateEmail']);
