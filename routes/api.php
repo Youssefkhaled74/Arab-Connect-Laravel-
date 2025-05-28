@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\HomeController;
 use App\Http\Controllers\Api\BranchController;
 use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\SubCategoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,11 +29,10 @@ Route::group(['middleware' => ['api']], function ($router) {
     // package
     Route::get('packages', [PackageController::class, 'index']);
     Route::group(['prefix' => 'auth'], function ($router) {
-        Route::post('register/user', [AuthController::class, 'registerUser']);
-        Route::post('register/vendor', [AuthController::class, 'registerVendor']);
-        Route::post('login', [AuthController::class, 'login']);
+        Route::post('register', [AuthController::class, 'register']); // for user or vendor
+        Route::post('branches/store', [AuthController::class, 'addBranch'])->middleware('auth:api'); // for vendor only        Route::post('login', [AuthController::class, 'login']);
         Route::post('regenerate-code', [AuthController::class, 'regenerateCode']);
-        Route::post('mobile-check', [AuthController::class, 'mobileCheck']);
+        Route::post('email-check', [AuthController::class, 'emailCheck']);
 
         Route::post('send-reset-code', [AuthController::class, 'sendResetCode']);
         Route::post('verify-reset-code', [AuthController::class, 'verifyResetCode']);
@@ -45,6 +45,7 @@ Route::group(['middleware' => ['api']], function ($router) {
     Route::get('branches/details/{id?}', [BranchController::class, 'details']);
     Route::post('get/branches/{page?}', [BranchController::class, 'branches']);
     Route::post('categories/{page?}', [HomeController::class, 'categories']);
+    Route::get('sub-categories/{category_id}', [SubCategoryController::class, 'getByCategory']);
     Route::get('category/{id?}', [HomeController::class, 'category']);
     Route::get('blogs/{page?}', [HomeController::class, 'blogs']);
     Route::get('blog/{id?}', [HomeController::class, 'blog']);

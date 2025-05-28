@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "bb761e7cb896dbbea3684907a2d82440",
+    "content-hash": "f863a0eeb514a91180415a8c14eb2b20",
     "packages": [
         {
             "name": "badinansoft/nova-language-switch",

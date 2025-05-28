@@ -31,7 +31,7 @@ class AuthController extends Controller
         $this->branch = $branch;
         $this->branchService = $branchService;
         $this->whatsAppService = $whatsAppService;
-        $this->middleware('auth:api', ['except' => ['login', 'register', 'mobileCheck', 'regenerateCode', 'sendResetCode', 'verifyResetCode', 'resetPassword', 'changePassword','registerUser','registerVendor']]);
+        $this->middleware('auth:api', ['except' => ['emailCheck','login', 'register', 'mobileCheck', 'regenerateCode', 'sendResetCode', 'verifyResetCode', 'resetPassword', 'changePassword', 'registerUser', 'registerVendor']]);
     }
 
     // public function register(Request $request)
@@ -128,18 +128,20 @@ class AuthController extends Controller
     //         return responseJson(500, "Internal Server Error", $e->getMessage());
     //     }
     // }
-    public function registerUser(Request $request)
+    public function register(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        $rules = [
             'email' => 'required|unique:users,email|max:50',
             'mobile' => 'required|unique:users,mobile|max:50',
             'country_code' => 'required|string|max:10',
             'password' => 'required|confirmed|max:30',
             'name' => 'required|string|max:60',
-            'user_type' => 'required|in:2', // Only user
+            'user_type' => 'required|in:1,2', // 1 = vendor, 2 = user
             'country.name' => 'required|string|max:100',
             'country.flag' => 'required|file|image|max:5120',
-        ]);
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) {
             return responseJson(400, "Bad Request", $validator->errors()->first());
@@ -149,56 +151,49 @@ class AuthController extends Controller
             DB::beginTransaction();
 
             $country_flag = uploadIamge($request->file('country.flag'), 'countries');
+            $is_activate = $request->user_type == 1 ? 0 : 1;
 
-            $user = $this->user->create([
+            $this->user->create([
                 'email' => $request->email ?? null,
                 'mobile' => $request->mobile ?? null,
                 'country_code' => $request->country_code ?? null,
                 'name' => $request->name ?? null,
                 'password' => bcrypt($request->password) ?? null,
-                'user_type' => 2,
+                'user_type' => $request->user_type,
                 'code' => 1111,
-                'is_activate' => 1,
+                'is_activate' => $is_activate,
                 'country_name' => $request->country['name'] ?? null,
                 'country_flag' => $country_flag ?? null,
             ]);
 
             DB::commit();
+
             return responseJson(200, "Success");
         } catch (\Exception $e) {
             DB::rollback();
             return responseJson(500, "Internal Server Error", $e->getMessage());
         }
     }
-    public function registerVendor(Request $request)
+    public function addBranch(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|unique:users,email|max:50',
-            'mobile' => 'required|unique:users,mobile|max:50',
+            'name' => 'required|string|max:255',
+            'mobile' => 'required|string|max:255',
             'country_code' => 'required|string|max:10',
-            'password' => 'required|confirmed|max:30',
-            'name' => 'required|string|max:60',
-            'user_type' => 'required|in:1', // Only vendor
-            'country.name' => 'required|string|max:100',
-            'country.flag' => 'required|file|image|max:5120',
-
-            'branch.name' => 'required|string|max:255',
-            'branch.mobile' => 'required|string|max:255',
-            'branch.country_code' => 'required|string|max:10',
-            'branch.location' => 'required|string|max:1550',
-            'branch.lat' => 'required|string|max:255',
-            'branch.lon' => 'required|string|max:255',
-            'branch.img' => 'required|file|image|max:5120',
-            'branch.category_id' => 'nullable|integer|exists:categories,id',
-            'branch.payments' => 'nullable|array',
-            'branch.payments.*' => 'nullable|exists:payment_methods,id',
-            'branch.email' => 'nullable|string|max:255',
-            'branch.face' => 'nullable|string|max:1550',
-            'branch.insta' => 'nullable|string|max:1550',
-            'branch.tiktok' => 'nullable|string|max:1550',
-            'branch.website' => 'nullable|string|max:1550',
-            'branch.tax_card' => 'nullable|file|image|max:5120',
-            'branch.commercial_register' => 'nullable|file|image|max:5120',
+            'location' => 'required|string|max:1550',
+            'lat' => 'required|string|max:255',
+            'lon' => 'required|string|max:255',
+            'img' => 'required|file|image|max:5120',
+            'category_id' => 'nullable|integer|exists:categories,id',
+            'payments' => 'nullable|array',
+            'payments.*' => 'nullable|exists:payment_methods,id',
+            'email' => 'nullable|string|max:255',
+            'face' => 'nullable|string|max:1550',
+            'insta' => 'nullable|string|max:1550',
+            'tiktok' => 'nullable|string|max:1550',
+            'website' => 'nullable|string|max:1550',
+            'tax_card' => 'nullable|file|image|max:5120',
+            'commercial_register' => 'nullable|file|image|max:5120',
         ]);
 
         if ($validator->fails()) {
@@ -208,70 +203,65 @@ class AuthController extends Controller
         try {
             DB::beginTransaction();
 
-            $country_flag = uploadIamge($request->file('country.flag'), 'countries');
+            $user = auth()->user();
 
-            $user = $this->user->create([
-                'email' => $request->email ?? null,
-                'mobile' => $request->mobile ?? null,
-                'country_code' => $request->country_code ?? null,
-                'name' => $request->name ?? null,
-                'password' => bcrypt($request->password) ?? null,
-                'user_type' => 1,
-                'code' => 1111,
-                'is_activate' => 0,
-                'country_name' => $request->country['name'] ?? null,
-                'country_flag' => $country_flag ?? null,
-            ]);
+            $branch_img = uploadIamge($request->file('img'), 'branches');
+            $tax_card = $request->hasFile('tax_card') ? uploadIamge($request->file('tax_card'), 'branches') : null;
+            $commercial_register = $request->hasFile('commercial_register') ? uploadIamge($request->file('commercial_register'), 'branches') : null;
+            $map_location = generateGoogleMapsLink($request->lat, $request->lon);
 
             $branch = $this->branch->create([
-                'name' => $request->branch['name'] ?? null,
-                'mobile' => $request->branch['mobile'] ?? null,
-                'country_code' => $request->branch['country_code'] ?? null,
-                'location' => $request->branch['location'] ?? null,
+                'name' => $request->name ?? null,
+                'mobile' => $request->mobile ?? null,
+                'country_code' => $request->country_code ?? null,
+                'location' => $request->location ?? null,
                 'map_location' => $map_location ?? null,
-                'category_id' => $request->branch['category_id'] ?? null,
-                'email' => $request->branch['email'] ?? null,
-                'face' => $request->branch['face'] ?? null,
-                'insta' => $request->branch['insta'] ?? null,
-                'tiktok' => $request->branch['tiktok'] ?? null,
-                'website' => $request->branch['website'] ?? null,
+                'category_id' => $request->category_id ?? null,
+                'email' => $request->email ?? null,
+                'face' => $request->face ?? null,
+                'insta' => $request->insta ?? null,
+                'tiktok' => $request->tiktok ?? null,
+                'website' => $request->website ?? null,
                 'img' => $branch_img ?? null,
                 'tax_card' => $tax_card ?? null,
                 'commercial_register' => $commercial_register ?? null,
                 'uuid' => generateCustomUUID(),
                 'owner_id' => $user->id,
                 'expire_at' => now()->addMonths(6),
-                'lat' => $request->branch['lat'] ?? null,
-                'lon' => $request->branch['lon'] ?? null,
+                'lat' => $request->lat ?? null,
+                'lon' => $request->lon ?? null,
             ]);
 
+            if ($request->has('payments') && is_array($request->payments)) {
+                $branch->payments()->sync(array_values($request->payments));
+            }
+
             DB::commit();
-            return responseJson(200, "Success");
+            return responseJson(200, "Branch created successfully", $branch);
         } catch (\Exception $e) {
             DB::rollback();
             return responseJson(500, "Internal Server Error", $e->getMessage());
         }
     }
 
-    public function mobileCheck(Request $request)
+    public function emailCheck(Request $request)
     {
-
         $validator = Validator::make($request->all(), [
             'code' => 'required|exists:users,code|max:4',
-            'mobile' => 'required|exists:users,mobile|max:60',
+            'email' => 'required|exists:users,email|max:255',
         ]);
         if ($validator->fails()) {
             return responseJson(400, "Bad Request", $validator->errors()->first());
         }
         try {
-            $user = $this->user->where('mobile', $request->mobile)->where('code', $request->code)->first();
-            if (!is_null($user->deleted_at)) {
+            $user = $this->user->where('email', $request->email)->where('code', $request->code)->first();
+            if (!$user || !is_null($user->deleted_at)) {
                 return responseJson(401, "This Account Not Activate , Please Contact Technical Support");
             }
             DB::beginTransaction();
             $user->update([
                 'code' => null,
-                'mobile_verified_at' =>  now(),
+                'email_verified_at' => now(),
             ]);
             $user->token = JWTAuth::customClaims(['exp' => Carbon::now()->addYears(20)->timestamp])->fromUser($user);
             DB::commit();
