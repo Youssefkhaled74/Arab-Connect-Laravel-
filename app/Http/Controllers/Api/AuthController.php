@@ -31,7 +31,7 @@ class AuthController extends Controller
         $this->branch = $branch;
         $this->branchService = $branchService;
         $this->whatsAppService = $whatsAppService;
-        $this->middleware('auth:api', ['except' => ['emailCheck','login', 'register', 'mobileCheck', 'regenerateCode', 'sendResetCode', 'verifyResetCode', 'resetPassword', 'changePassword', 'registerUser', 'registerVendor']]);
+        $this->middleware('auth:api', ['except' => ['emailCheck', 'login', 'register', 'mobileCheck', 'regenerateCode', 'sendResetCode', 'verifyResetCode', 'resetPassword', 'changePassword', 'registerUser', 'registerVendor']]);
     }
 
     // public function register(Request $request)
@@ -137,8 +137,7 @@ class AuthController extends Controller
             'password' => 'required|confirmed|max:30',
             'name' => 'required|string|max:60',
             'user_type' => 'required|in:1,2', // 1 = vendor, 2 = user
-            'country_id' => 'required|string|max:100',
-            // 'country.flag' => 'required|file|image|max:5120',
+            'country_id' => 'required|integer|exists:countries,id',
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -150,20 +149,18 @@ class AuthController extends Controller
         try {
             DB::beginTransaction();
 
-            $country_flag = uploadIamge($request->file('country.flag'), 'countries');
             $is_activate = $request->user_type == 1 ? 0 : 1;
 
             $this->user->create([
                 'email' => $request->email ?? null,
                 'mobile' => $request->mobile ?? null,
                 'country_code' => $request->country_code ?? null,
+                'country_id' => $request->country_id ?? null,
                 'name' => $request->name ?? null,
                 'password' => bcrypt($request->password) ?? null,
                 'user_type' => $request->user_type,
                 'code' => 1111,
                 'is_activate' => $is_activate,
-                'country_name' => $request->country['name'] ?? null,
-                'country_flag' => $country_flag ?? null,
             ]);
 
             DB::commit();
@@ -179,7 +176,8 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'mobile' => 'required|string|max:255',
-            'country_code' => 'required|string|max:10',
+            'country_code' => 'nullable|string|max:10',
+            'country_id' => 'required|integer|exists:countries,id',
             'location' => 'required|string|max:1550',
             'lat' => 'required|string|max:255',
             'lon' => 'required|string|max:255',
@@ -214,6 +212,7 @@ class AuthController extends Controller
                 'name' => $request->name ?? null,
                 'mobile' => $request->mobile ?? null,
                 'country_code' => $request->country_code ?? null,
+                'country_id' => $request->country_id ?? null,
                 'location' => $request->location ?? null,
                 'map_location' => $map_location ?? null,
                 'category_id' => $request->category_id ?? null,
