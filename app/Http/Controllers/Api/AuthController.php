@@ -273,24 +273,21 @@ class AuthController extends Controller
 
     public function regenerateCode(Request $request)
     {
-
         $validator = Validator::make($request->all(), [
-            'mobile' => 'required|exists:users,mobile|max:60',
+            'email' => 'required|exists:users,email|max:255',
         ]);
         if ($validator->fails()) {
             return responseJson(400, "Bad Request", $validator->errors()->first());
         }
 
-        $user = $this->user->where('mobile', $request->mobile)->first();
+        $user = $this->user->where('email', $request->email)->first();
         if (!is_null($user->deleted_at)) {
             return responseJson(401, "This Account Not Activate , Please Contact Technical Support");
         }
         try {
-
             DB::beginTransaction();
             $user->update([
-                'code' => 1111,
-                // 'code' => rand(1000, 9999),
+                'code' => 1111, // or rand(1000, 9999)
             ]);
             DB::commit();
         } catch (\Exception $e) {
@@ -434,19 +431,19 @@ class AuthController extends Controller
     public function sendResetCode(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'mobile' => 'required',
+            'email' => 'required|exists:users,email|max:255',
         ]);
         if ($validator->fails()) {
             return responseJson(400, "Bad Request", $validator->errors()->first());
         }
 
-        $user = $this->user->where('mobile', $request->mobile)->first();
+        $user = $this->user->where('email', $request->email)->first();
         if (!$user) {
             return responseJson(404, "User not found");
         }
 
         try {
-            $user->update(['code' => 1111]);
+            $user->update(['code' => 1111]); // or rand(1000, 9999)
         } catch (\Exception $e) {
             return responseJson(500, "Internal Server Error");
         }
@@ -457,14 +454,14 @@ class AuthController extends Controller
     public function verifyResetCode(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'mobile' => 'required|exists:users,mobile|max:60',
+            'email' => 'required|exists:users,email|max:255',
             'code' => 'required|exists:users,code|max:4',
         ]);
         if ($validator->fails()) {
             return responseJson(400, "Bad Request", $validator->errors()->first());
         }
 
-        $user = $this->user->where('mobile', $request->mobile)->first();
+        $user = $this->user->where('email', $request->email)->first();
         if (!$user || !is_null($user->deleted_at) || $user->code != $request->code) {
             return responseJson(401, "There Is Something Wrong, Please Contact Technical Support");
         }
