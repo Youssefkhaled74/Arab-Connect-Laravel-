@@ -42,22 +42,19 @@ class AuthController extends Controller
             'password' => 'required|confirmed|max:30',
             'name' => 'required|string|max:60',
             'user_type' => 'required|in:1,2',
+            'country.name' => 'required|string|max:100',
+            'country.flag' => 'required|file|image|max:5120',
 
             'branch.name' => 'required_if:user_type,1|string|max:255',
             'branch.mobile' => 'required_if:user_type,1|string|max:255',
             'branch.location' => 'required_if:user_type,1|string|max:1550',
-            //'branch.map_location' => 'required_if:user_type,1|string|max:1550',
-            // 'branch.category_id' => 'required_if:user_type,1|integer|exists:categories,id',
-            'branch.imgs' => 'required_if:user_type,1|array',
-            'branch.imgs.*' => 'file|image|max:5120',
-
+            'branch.lat' => 'required_if:user_type,1|string|max:255',
+            'branch.lon' => 'required_if:user_type,1|string|max:255',
+            'branch.img' => 'required_if:user_type,1|file|image|max:5120',
             'branch.category_id' => 'nullable|integer|exists:categories,id',
-
             'branch.payments' => 'nullable|array',
             'branch.payments.*' => 'nullable|exists:payment_methods,id',
             'branch.email' => 'nullable|string|max:255',
-            'branch.lat' => 'required_if:user_type,1|string|max:255',
-            'branch.lon' => 'required_if:user_type,1|string|max:255',
             'branch.face' => 'nullable|string|max:1550',
             'branch.insta' => 'nullable|string|max:1550',
             'branch.tiktok' => 'nullable|string|max:1550',
@@ -65,16 +62,18 @@ class AuthController extends Controller
             'branch.tax_card' => 'nullable|file|image|max:5120',
             'branch.commercial_register' => 'nullable|file|image|max:5120',
         ]);
+
         if ($validator->fails()) {
             return responseJson(400, "Bad Request", $validator->errors()->first());
         }
-        if(!$request->hasFile('branch.imgs') == null && count($request->file('branch.imgs')) > 10){
-            return responseJson(500, "not accepted more than 10 imgs");
-        }
+
         try {
             DB::beginTransaction();
 
             $active = $request->user_type == 1 ? 0 : 1;
+
+            // Upload country flag
+            $country_flag = uploadIamge($request->file('country.flag'), 'countries');
 
             $user = $this->user->create([
                 'email' => $request->email ?? null,
@@ -82,24 +81,21 @@ class AuthController extends Controller
                 'name' => $request->name ?? null,
                 'password' => bcrypt($request->password) ?? null,
                 'user_type' => $request->user_type ?? null,
-                'code' => 1111,
+                'code' => 1111, 
                 'is_activate' => $active,
-                // 'code' => rand(1000, 9999),
+                'country_name' => $request->country['name'] ?? null,
+                'country_flag' => $country_flag ?? null,
             ]);
+
             if (isset($request->branch) && !is_null($request->branch)) {
-                if (!$request->hasFile('branch.tax_card') == null) {
-                    $tax_card = uploadIamge($request->file('branch.tax_card'), 'branches'); // function on helper file to upload file
-                }
-                if (!$request->hasFile('branch.commercial_register') == null) {
-                    $commercial_register = uploadIamge($request->file('branch.commercial_register'), 'branches'); // function on helper file to upload file
-                }
-                if (!$request->hasFile('branch.imgs') == null) {
-                    $imgs = uploadIamges($request->file('branch.imgs'), 'branches'); // function on helper file to upload file
-                }
-                // $coordinates = extractLatLong($request->branch['map_location'] ?? null);
-				$map_location = generateGoogleMapsLink($request->branch['lat'] , $request->branch['lon']);
+                // Upload branch image and documents
+                $branch_img = uploadIamge($request->file('branch.img'), 'branches');
+                $tax_card = $request->hasFile('branch.tax_card') ? uploadIamge($request->file('branch.tax_card'), 'branches') : null;
+                $commercial_register = $request->hasFile('branch.commercial_register') ? uploadIamge($request->file('branch.commercial_register'), 'branches') : null;
+
+                $map_location = generateGoogleMapsLink($request->branch['lat'], $request->branch['lon']);
+
                 $branch = $this->branch->create([
-					
                     'name' => $request->branch['name'] ?? null,
                     'mobile' => $request->branch['mobile'] ?? null,
                     'location' => $request->branch['location'] ?? null,
@@ -110,7 +106,7 @@ class AuthController extends Controller
                     'insta' => $request->branch['insta'] ?? null,
                     'tiktok' => $request->branch['tiktok'] ?? null,
                     'website' => $request->branch['website'] ?? null,
-                    'imgs' => $imgs ?? null,
+                    'img' => $branch_img ?? null,
                     'tax_card' => $tax_card ?? null,
                     'commercial_register' => $commercial_register ?? null,
                     'uuid' => generateCustomUUID(),
@@ -119,19 +115,18 @@ class AuthController extends Controller
                     'lat' => $request->branch['lat'] ?? null,
                     'lon' => $request->branch['lon'] ?? null,
                 ]);
+
                 if (isset($request->branch['payments']) && count($request->branch['payments']) > 0) {
                     $branch->payments()->sync(array_values($request->branch['payments']));
                 }
             }
+
             DB::commit();
+            return responseJson(200, "Success");
         } catch (\Exception $e) {
-
-
             DB::rollback();
-
-            return responseJson(500, "Internal Server Error");
+            return responseJson(500, "Internal Server Error", $e->getMessage());
         }
-        return responseJson(200, "success");
     }
 
     public function mobileCheck(Request $request)
