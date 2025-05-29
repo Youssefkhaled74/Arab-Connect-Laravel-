@@ -20,6 +20,7 @@ use Laravel\Nova\Fields\Text;
 use Laravel\Nova\Fields\Number;
 use Laravel\Nova\Menu\MenuItem;
 use App\Nova\Admin as NovaAdmin;
+use App\Nova\SubCategory;
 use Laravel\Nova\Fields\Markdown;
 use Laravel\Nova\Menu\MenuSection;
 use Spatie\Permission\Models\Role;
@@ -49,6 +50,7 @@ class NovaServiceProvider extends NovaApplicationServiceProvider
 
                 MenuSection::make(__('Content Management'), [
                     MenuItem::resource(Category::class),
+                    MenuItem::resource(SubCategory::class),
                     MenuItem::resource(PaymentMethod::class),
                     MenuItem::resource(About::class),
                     MenuItem::resource(Blog::class),

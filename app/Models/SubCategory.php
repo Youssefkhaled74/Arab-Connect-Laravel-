@@ -13,4 +13,11 @@ class SubCategory extends Model
         'name',
         'img',
     ];
+
+
+
+    public function category()
+    {
+        return $this->belongsTo(\App\Models\Category::class);
+    }
 }

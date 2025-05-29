@@ -33,6 +33,7 @@ class User extends Authenticatable implements JWTSubject
         'is_activate',
         'deleted_at',
         'img',
+        'email_verified_at',
     ];
 
     protected static $logAttributes = ['*']; 
@@ -57,6 +58,11 @@ class User extends Authenticatable implements JWTSubject
         return $this->getKey();
     }
 
+    /**
+     * Get the custom claims that will be added to the JWT payload.
+     *
+     * @return array
+     */
     public function getJWTCustomClaims()
     {
         return [];

@@ -131,7 +131,7 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $rules = [
-            'email' => 'required|unique:users,email|max:50',
+            'email' => 'required|unique:users,email|max:50|email',
             'mobile' => 'required|unique:users,mobile|max:50',
             'country_code' => 'required|string|max:10',
             'password' => 'required|confirmed|max:30',
@@ -149,7 +149,7 @@ class AuthController extends Controller
         try {
             DB::beginTransaction();
 
-            $is_activate = $request->user_type == 1 ? 0 : 1;
+            $is_activate = 1;
 
             $this->user->create([
                 'email' => $request->email ?? null,
@@ -274,7 +274,7 @@ class AuthController extends Controller
     public function regenerateCode(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|exists:users,email|max:255',
+            'email' => 'required|exists:users,email|max:255|email',
         ]);
         if ($validator->fails()) {
             return responseJson(400, "Bad Request", $validator->errors()->first());
@@ -313,13 +313,18 @@ class AuthController extends Controller
         if (!$user->is_activate) {
             return responseJson(401, "This Account Not Verified , Please Contact Technical Support");
         }
+        if (is_null($user->email_verified_at)) {
+            return response()->json([
+                'status' => false,
+                'msg' => 'Please verify your email'
+            ], 401);
+        }
         try {
             if (!FacadesHash::check($request->password, $user->password)) {
                 return response()->json(['error' => 'Invalid Credentials'], 401);
             }
             $user->token = JWTAuth::customClaims(['exp' => Carbon::now()->addYears(20)->timestamp])->fromUser($user);
 
-            // Always return a full URL for the user photo, or a default image if not set
             $imgUrl = $user->img
                 ? env('APP_URL') . '/uploads/' . $user->img
                 : env('APP_URL') . '/uploads/default.png';
@@ -475,6 +480,12 @@ class AuthController extends Controller
         $user = $this->user->where('email', $request->email)->first();
         if (!$user || !is_null($user->deleted_at) || $user->code != $request->code) {
             return responseJson(401, "There Is Something Wrong, Please Contact Technical Support");
+        }
+        $user->emailverified_at = now();
+        try {
+            $user->save();
+        } catch (\Exception $e) {
+            return responseJson(500, "Internal Server Error");
         }
 
         return responseJson(200, "Code verified successfully.");
