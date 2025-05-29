@@ -192,6 +192,12 @@ class AuthController extends Controller
             'website' => 'nullable|string|max:1550',
             'tax_card' => 'nullable|file|image|max:5120',
             'commercial_register' => 'nullable|file|image|max:5120',
+            'days' => 'nullable|array',
+            'days.*.off' => 'nullable|in:0,1',
+            'days.*.day' => 'nullable|min:1|max:7',
+            'days.*.from' => 'nullable',
+            'days.*.to' => 'nullable',
+            "all_days" => "nullable|in:0,1",
         ]);
 
         if ($validator->fails()) {
@@ -229,7 +235,20 @@ class AuthController extends Controller
                 'expire_at' => now()->addMonths(6),
                 'lat' => $request->lat ?? null,
                 'lon' => $request->lon ?? null,
+                'all_days' => $request->all_days ?? 0,
             ]);
+
+            // Add working days if provided
+            if ($request->has('days') && is_array($request->days)) {
+                foreach ($request->days as $day) {
+                    $branch->days()->create([
+                        'from' => $day['from'] ?? null,
+                        'to' => $day['to'] ?? null,
+                        'off' => $day['off'] ?? 0,
+                        'day' => $day['day'] ?? null,
+                    ]);
+                }
+            }
 
             if ($request->has('payments') && is_array($request->payments)) {
                 $branch->payments()->sync(array_values($request->payments));
@@ -242,7 +261,6 @@ class AuthController extends Controller
             return responseJson(500, "Internal Server Error", $e->getMessage());
         }
     }
-
     public function emailCheck(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -326,8 +344,8 @@ class AuthController extends Controller
             $user->token = JWTAuth::customClaims(['exp' => Carbon::now()->addYears(20)->timestamp])->fromUser($user);
 
             $imgUrl = $user->img
-                ? env('APP_URL') . '/uploads/' . $user->img
-                : env('APP_URL') . '/uploads/default.png';
+                ? env('APP_URL') . '/public/' . $user->img
+                : null;
         } catch (\Exception $e) {
             return responseJson(500, "Internal Server Error");
         }
@@ -481,11 +499,11 @@ class AuthController extends Controller
         if (!$user || !is_null($user->deleted_at) || $user->code != $request->code) {
             return responseJson(401, "There Is Something Wrong, Please Contact Technical Support");
         }
-        $user->emailverified_at = now();
+        $user->email_verified_at = now();
         try {
             $user->save();
         } catch (\Exception $e) {
-            return responseJson(500, "Internal Server Error");
+            return responseJson(500, "Internal Server Error", $e->getMessage());
         }
 
         return responseJson(200, "Code verified successfully.");
@@ -494,7 +512,7 @@ class AuthController extends Controller
     public function resetPassword(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'mobile' => 'required|exists:users,mobile|max:60',
+            'email' => 'required|exists:users,email|max:255',
             'code' => 'required|exists:users,code|max:4',
             'password' => 'required|confirmed|max:30',
         ]);
@@ -502,7 +520,7 @@ class AuthController extends Controller
             return responseJson(400, "Bad Request", $validator->errors()->first());
         }
 
-        $user = $this->user->where('mobile', $request->mobile)->first();
+        $user = $this->user->where('email', $request->email)->first();
         if (!$user || !is_null($user->deleted_at) || $user->code != $request->code) {
             return responseJson(401, "This Account Not Activated, Please Contact Technical Support");
         }
@@ -511,6 +529,7 @@ class AuthController extends Controller
             $user->update([
                 'password' => bcrypt($request->password),
                 'code' => null,
+                'email_verified_at' => now(),
             ]);
         } catch (\Exception $e) {
             return responseJson(500, "Internal Server Error");
