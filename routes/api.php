@@ -37,6 +37,10 @@ Route::group(['middleware' => ['api']], function ($router) {
         Route::post('regenerate-code', [AuthController::class, 'regenerateCode']);
         Route::post('email-check', [AuthController::class, 'emailCheck']);
 
+
+        Route::post('user/update-profile', [AuthController::class, 'updateProfile'])->middleware('auth:api');
+        Route::post('user/verify-new-email', [AuthController::class, 'verifyNewEmail'])->middleware('auth:api');
+
         Route::post('send-reset-code', [AuthController::class, 'sendResetCode']);
         Route::post('verify-reset-code', [AuthController::class, 'verifyResetCode']);
         Route::post('reset', [AuthController::class, 'resetPassword']);

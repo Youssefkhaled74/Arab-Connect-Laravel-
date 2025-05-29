@@ -658,4 +658,102 @@ class AuthController extends Controller
             return responseJson(500, "Internal Server Error", $e->getMessage());
         }
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public function updateProfile(Request $request)
+    {
+        $user = auth()->user();
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'nullable|string|max:255',
+            'mobile' => 'nullable|string|max:60|unique:users,mobile,' . $user->id,
+            'country_code' => 'nullable|string|max:10',
+            'email' => 'nullable|email|max:255|unique:users,email,' . $user->id,
+            'img' => 'nullable|file|image|max:5120',
+        ]);
+        if ($validator->fails()) {
+            return responseJson(400, "Bad Request", $validator->errors()->first());
+        }
+
+        // Update profile photo
+        if ($request->hasFile('img')) {
+            $imgPath = uploadIamge($request->file('img'), 'users');
+            $user->img = $imgPath;
+        }
+
+        // Update name, mobile, country_code
+        if ($request->filled('name')) $user->name = $request->name;
+        if ($request->filled('mobile')) $user->mobile = $request->mobile;
+        if ($request->filled('country_code')) $user->country_code = $request->country_code;
+
+        // Handle email change
+        $emailChanged = false;
+        if ($request->filled('email') && $request->email !== $user->email) {
+            $user->new_email = $request->email;
+            $user->code = 1111; // or rand(1000,9999)
+            $emailChanged = true;
+            // Optionally: send email with code here
+        }
+
+        $user->save();
+
+        if ($emailChanged) {
+            return response()->json([
+                'status' => false,
+                'msg' => 'Please verify your new email to complete the update.',
+                'user' => $user
+            ], 200);
+        }
+
+        return responseJson(200, "Profile updated successfully.", [
+            'user' => $user
+        ]);
+    }
+    public function verifyNewEmail(Request $request)
+    {
+        $user = auth()->user();
+
+        $validator = Validator::make($request->all(), [
+            'code' => 'required|exists:users,code|max:4',
+        ]);
+        if ($validator->fails()) {
+            return responseJson(400, "Bad Request", $validator->errors()->first());
+        }
+
+        if ($user->code != $request->code || !$user->new_email) {
+            return responseJson(401, "Invalid code or no pending email change.");
+        }
+
+        try {
+            $user->email = $user->new_email;
+            $user->email_verified_at = now();
+            $user->new_email = null;
+            $user->code = null;
+            $user->save();
+        } catch (\Exception $e) {
+            return responseJson(500, "Internal Server Error");
+        }
+
+        return responseJson(200, "Email updated and verified successfully.");
+    }
 }

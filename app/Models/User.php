@@ -34,6 +34,7 @@ class User extends Authenticatable implements JWTSubject
         'deleted_at',
         'img',
         'email_verified_at',
+        'new_email',
     ];
 
     protected static $logAttributes = ['*']; 
