@@ -33,101 +33,6 @@ class AuthController extends Controller
         $this->whatsAppService = $whatsAppService;
         $this->middleware('auth:api', ['except' => ['emailCheck', 'login', 'register', 'mobileCheck', 'regenerateCode', 'sendResetCode', 'verifyResetCode', 'resetPassword', 'changePassword', 'registerUser', 'registerVendor']]);
     }
-
-    // public function register(Request $request)
-    // {
-    //     $validator = Validator::make($request->all(), [
-    //         'email' => 'required|unique:users,email|max:50',
-    //         'mobile' => 'required|unique:users,mobile|max:50',
-    //         'password' => 'required|confirmed|max:30',
-    //         'name' => 'required|string|max:60',
-    //         'user_type' => 'required|in:1,2',
-    //         'country.name' => 'required|string|max:100',
-    //         'country.flag' => 'required|file|image|max:5120',
-
-    //         'branch.name' => 'required_if:user_type,1|string|max:255',
-    //         'branch.mobile' => 'required_if:user_type,1|string|max:255',
-    //         'branch.location' => 'required_if:user_type,1|string|max:1550',
-    //         'branch.lat' => 'required_if:user_type,1|string|max:255',
-    //         'branch.lon' => 'required_if:user_type,1|string|max:255',
-    //         'branch.img' => 'required_if:user_type,1|file|image|max:5120',
-    //         'branch.category_id' => 'nullable|integer|exists:categories,id',
-    //         'branch.payments' => 'nullable|array',
-    //         'branch.payments.*' => 'nullable|exists:payment_methods,id',
-    //         'branch.email' => 'nullable|string|max:255',
-    //         'branch.face' => 'nullable|string|max:1550',
-    //         'branch.insta' => 'nullable|string|max:1550',
-    //         'branch.tiktok' => 'nullable|string|max:1550',
-    //         'branch.website' => 'nullable|string|max:1550',
-    //         'branch.tax_card' => 'nullable|file|image|max:5120',
-    //         'branch.commercial_register' => 'nullable|file|image|max:5120',
-    //     ]);
-
-    //     if ($validator->fails()) {
-    //         return responseJson(400, "Bad Request", $validator->errors()->first());
-    //     }
-
-    //     try {
-    //         DB::beginTransaction();
-
-    //         $active = $request->user_type == 1 ? 0 : 1;
-
-    //         // Upload country flag
-    //         $country_flag = uploadIamge($request->file('country.flag'), 'countries');
-
-    //         $user = $this->user->create([
-    //             'email' => $request->email ?? null,
-    //             'mobile' => $request->mobile ?? null,
-    //             'name' => $request->name ?? null,
-    //             'password' => bcrypt($request->password) ?? null,
-    //             'user_type' => $request->user_type ?? null,
-    //             'code' => 1111, 
-    //             'is_activate' => $active,
-    //             'country_name' => $request->country['name'] ?? null,
-    //             'country_flag' => $country_flag ?? null,
-    //         ]);
-
-    //         if (isset($request->branch) && !is_null($request->branch)) {
-    //             // Upload branch image and documents
-    //             $branch_img = uploadIamge($request->file('branch.img'), 'branches');
-    //             $tax_card = $request->hasFile('branch.tax_card') ? uploadIamge($request->file('branch.tax_card'), 'branches') : null;
-    //             $commercial_register = $request->hasFile('branch.commercial_register') ? uploadIamge($request->file('branch.commercial_register'), 'branches') : null;
-
-    //             $map_location = generateGoogleMapsLink($request->branch['lat'], $request->branch['lon']);
-
-    //             $branch = $this->branch->create([
-    //                 'name' => $request->branch['name'] ?? null,
-    //                 'mobile' => $request->branch['mobile'] ?? null,
-    //                 'location' => $request->branch['location'] ?? null,
-    //                 'map_location' => $map_location ?? null,
-    //                 'category_id' => $request->branch['category_id'] ?? null,
-    //                 'email' => $request->branch['email'] ?? null,
-    //                 'face' => $request->branch['face'] ?? null,
-    //                 'insta' => $request->branch['insta'] ?? null,
-    //                 'tiktok' => $request->branch['tiktok'] ?? null,
-    //                 'website' => $request->branch['website'] ?? null,
-    //                 'img' => $branch_img ?? null,
-    //                 'tax_card' => $tax_card ?? null,
-    //                 'commercial_register' => $commercial_register ?? null,
-    //                 'uuid' => generateCustomUUID(),
-    //                 'owner_id' => $user->id,
-    //                 'expire_at' => now()->addMonths(6),
-    //                 'lat' => $request->branch['lat'] ?? null,
-    //                 'lon' => $request->branch['lon'] ?? null,
-    //             ]);
-
-    //             if (isset($request->branch['payments']) && count($request->branch['payments']) > 0) {
-    //                 $branch->payments()->sync(array_values($request->branch['payments']));
-    //             }
-    //         }
-
-    //         DB::commit();
-    //         return responseJson(200, "Success");
-    //     } catch (\Exception $e) {
-    //         DB::rollback();
-    //         return responseJson(500, "Internal Server Error", $e->getMessage());
-    //     }
-    // }
     public function register(Request $request)
     {
         $rules = [
@@ -288,7 +193,6 @@ class AuthController extends Controller
         }
         return responseJson(200, "success", $user->only(['id', 'name', 'mobile', 'email', 'user_type', 'token']));
     }
-
     public function regenerateCode(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -314,7 +218,6 @@ class AuthController extends Controller
         }
         return responseJson(200, "success");
     }
-
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -361,15 +264,27 @@ class AuthController extends Controller
     }
     public function me()
     {
-        return responseJson(200, "success", auth()->user()->only(['id', 'name', 'mobile', 'email', 'user_type']));
-    }
+        $user = auth()->user();
+        $imgUrl = $user->img
+            ? env('APP_URL') . '/public/' . $user->img
+            : null;
 
+        return responseJson(200, "success", [
+            'id' => $user->id,
+            'name' => $user->name,
+            'mobile' => $user->mobile,
+            'country_code' => $user->country_code,
+            'email' => $user->email,
+            'user_type' => $user->user_type,
+            'country_id' => $user->country_id,
+            'img' => $imgUrl,
+        ]);
+    }
     public function userBranches()
     {
         $branches['branches'] = $this->branchService->userBranches();
         return responseJson(200, "success", $branches);
     }
-
     public function getFavorites()
     {
         try {
@@ -379,7 +294,6 @@ class AuthController extends Controller
             return responseJson(500, "Internal Server Error", $e->getMessage());
         }
     }
-
     public function addFavorites($id = 0)
     {
         try {
@@ -391,19 +305,16 @@ class AuthController extends Controller
             return responseJson(500, "Internal Server Error");
         }
     }
-
     public function logout()
     {
         auth()->logout();
         $data['token'] = null;
         return responseJson(200, "successfully logged out", $data);
     }
-
     public function refresh()
     {
         return responseJson(200, "success", auth()->refresh());
     }
-
     public function userUpdate(Request $request)
     {
 
@@ -421,7 +332,6 @@ class AuthController extends Controller
         $user->save();
         return responseJson(200, "success");
     }
-
     public function changeMobileNum(Request $request)
     {
 
@@ -449,7 +359,6 @@ class AuthController extends Controller
         }
         return responseJson(200, "success");
     }
-
     public function deleteAccount()
     {
         $user = auth()->guard('api')->user();
@@ -457,11 +366,6 @@ class AuthController extends Controller
         $user->save();
         return responseJson(200, "success");
     }
-
-
-
-    ///////////////
-
     public function sendResetCode(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -484,7 +388,6 @@ class AuthController extends Controller
 
         return responseJson(200, "Reset code sent successfully.");
     }
-
     public function verifyResetCode(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -508,7 +411,6 @@ class AuthController extends Controller
 
         return responseJson(200, "Code verified successfully.");
     }
-
     public function resetPassword(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -536,7 +438,6 @@ class AuthController extends Controller
         }
         return responseJson(200, "Password reset successfully.");
     }
-
     public function changePassword(Request $request)
     {
         // التحقق من صحة البيانات المدخلة
@@ -569,7 +470,6 @@ class AuthController extends Controller
 
         return responseJson(200, "Password changed successfully.");
     }
-
     public function updateEmail(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -620,24 +520,6 @@ class AuthController extends Controller
         }
         return responseJson(200, "Email updated successfully.");
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     public function uploadProfilePhoto(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -658,28 +540,6 @@ class AuthController extends Controller
             return responseJson(500, "Internal Server Error", $e->getMessage());
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     public function updateProfile(Request $request)
     {
         $user = auth()->user();
@@ -690,6 +550,7 @@ class AuthController extends Controller
             'country_code' => 'nullable|string|max:10',
             'email' => 'nullable|email|max:255|unique:users,email,' . $user->id,
             'img' => 'nullable|file|image|max:5120',
+            'country_id' => 'nullable|integer|exists:countries,id',
         ]);
         if ($validator->fails()) {
             return responseJson(400, "Bad Request", $validator->errors()->first());
@@ -705,6 +566,7 @@ class AuthController extends Controller
         if ($request->filled('name')) $user->name = $request->name;
         if ($request->filled('mobile')) $user->mobile = $request->mobile;
         if ($request->filled('country_code')) $user->country_code = $request->country_code;
+        if ($request->filled('country_id')) $user->country_id = $request->country_id;
 
         // Handle email change
         $emailChanged = false;
