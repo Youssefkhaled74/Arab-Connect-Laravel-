@@ -64,22 +64,22 @@ class Branch extends Resource
     {
         return [
             ID::make()->sortable(),
-            Text::make(__('name'),'name')->sortable()
-            ->hideWhenCreating()
-            ->hideWhenUpdating(),
+            Text::make(__('name'), 'name')->sortable()
+                ->hideWhenCreating()
+                ->hideWhenUpdating(),
 
-            Text::make(__('email'),'email')->sortable()
-            ->hideWhenCreating()
-            ->hideWhenUpdating(),
+            Text::make(__('email'), 'email')->sortable()
+                ->hideWhenCreating()
+                ->hideWhenUpdating(),
 
             Text::make(__('mobile'), 'mobile')->sortable()
-            ->hideWhenCreating()
-            ->hideWhenUpdating(),
+                ->hideWhenCreating()
+                ->hideWhenUpdating(),
 
             Text::make(__('imgs'), 'imgs')
                 ->displayUsing(function ($value) {
                     return collect(explode(',', $value))->map(function ($path) {
-                        return '<a href="'.asset('public/' . $path).'"><img src="' . asset('public/'.$path) . '" style="max-width: 300px; margin: 10px;border-radius: 10px;" /></a>';
+                        return '<a href="' . asset('public/' . $path) . '"><img src="' . asset('public/' . $path) . '" style="max-width: 300px; margin: 10px;border-radius: 10px;" /></a>';
                     })->implode('');
                 })
                 ->asHtml()
@@ -87,70 +87,70 @@ class Branch extends Resource
 
             Text::make(__('tax_card'), 'tax_card')
                 ->displayUsing(function ($value) {
-                    return '<a href="'.asset('public/'.$value).'"><img src="' . asset('public/'.$value) . '" style="max-width: 300px; margin: 10px;border-radius: 10px;" /></a>';
+                    return '<a href="' . asset('public/' . $value) . '"><img src="' . asset('public/' . $value) . '" style="max-width: 300px; margin: 10px;border-radius: 10px;" /></a>';
                 })
                 ->asHtml()
                 ->onlyOnDetail(),
 
             Text::make(__('commercial_register'), 'commercial_register')
                 ->displayUsing(function ($value) {
-                    return '<a href="'.asset('public/'.$value).'"><img src="' . asset('public/'.$value) . '" style="max-width: 300px; margin: 10px;border-radius: 10px;" /></a>';
+                    return '<a href="' . asset('public/' . $value) . '"><img src="' . asset('public/' . $value) . '" style="max-width: 300px; margin: 10px;border-radius: 10px;" /></a>';
                 })
                 ->asHtml()
                 ->onlyOnDetail(),
 
             Text::make(__('facebook'), 'face')->sortable()
-            ->hideWhenCreating()
-            ->hideWhenUpdating()
-            ->hideFromIndex()
-            ->displayUsing(function ($value) {
-                return '<a href="' . $value . '" target="_blank">' . __('facebook') . '</a>';
-            })
-            ->asHtml(),
+                ->hideWhenCreating()
+                ->hideWhenUpdating()
+                ->hideFromIndex()
+                ->displayUsing(function ($value) {
+                    return '<a href="' . $value . '" target="_blank">' . __('facebook') . '</a>';
+                })
+                ->asHtml(),
 
             Text::make(__('instagram'), 'insta')->sortable()
-            ->hideWhenCreating()
-            ->hideWhenUpdating()
-            ->hideFromIndex()
-            ->displayUsing(function ($value) {
-                return '<a href="' . $value . '" target="_blank">' . __('instagram') . '</a>';
-            })
-            ->asHtml(),
+                ->hideWhenCreating()
+                ->hideWhenUpdating()
+                ->hideFromIndex()
+                ->displayUsing(function ($value) {
+                    return '<a href="' . $value . '" target="_blank">' . __('instagram') . '</a>';
+                })
+                ->asHtml(),
 
             Text::make(__('tiktok'), 'tiktok')->sortable()
-            ->hideWhenCreating()
-            ->hideWhenUpdating()
-            ->hideFromIndex()
-            ->displayUsing(function ($value) {
-                return '<a href="' . $value . '" target="_blank">' . __('tiktok') . '</a>';
-            })
-            ->asHtml(),
+                ->hideWhenCreating()
+                ->hideWhenUpdating()
+                ->hideFromIndex()
+                ->displayUsing(function ($value) {
+                    return '<a href="' . $value . '" target="_blank">' . __('tiktok') . '</a>';
+                })
+                ->asHtml(),
 
             Text::make(__('website'), 'website')->sortable()
-            ->hideWhenCreating()
-            ->hideWhenUpdating()
-            ->hideFromIndex()
-            ->displayUsing(function ($value) {
-                return '<a href="' . $value . '" target="_blank">' . __('website') . '</a>';
-            })
-            ->asHtml(),
+                ->hideWhenCreating()
+                ->hideWhenUpdating()
+                ->hideFromIndex()
+                ->displayUsing(function ($value) {
+                    return '<a href="' . $value . '" target="_blank">' . __('website') . '</a>';
+                })
+                ->asHtml(),
 
             Text::make(__('Map Location'), 'map_location')->sortable()
-            ->hideWhenCreating()
-            ->hideWhenUpdating()
-            ->hideFromIndex()
-            ->displayUsing(function ($value) {
-                return '<a href="' . $value . '" target="_blank">' . $value . '</a>';
-            })
-            ->asHtml(),
+                ->hideWhenCreating()
+                ->hideWhenUpdating()
+                ->hideFromIndex()
+                ->displayUsing(function ($value) {
+                    return '<a href="' . $value . '" target="_blank">' . $value . '</a>';
+                })
+                ->asHtml(),
 
-            BelongsTo::make(__('category'), 'category', Category::class)
-            ->display('name')
-            ->hideWhenCreating(),
+            BelongsTo::make(__('Sub Category'), 'subCategory', \App\Nova\SubCategory::class)
+                ->display('name')
+                ->nullable(),
 
             BelongsTo::make(__('owner'), 'owner', User::class)->display('name')
-            ->hideWhenCreating()
-            ->hideWhenUpdating(),
+                ->hideWhenCreating()
+                ->hideWhenUpdating(),
 
             GHMap::make(__('location'))
                 ->latitude($this->lat)
@@ -162,13 +162,13 @@ class Branch extends Resource
             Boolean::make(__('is_published'), 'is_published')->sortable()->trueValue(1)->falseValue(0),
             Boolean::make(__('is_verified'), 'is_verified')->sortable()->trueValue(1)->falseValue(0),
             Boolean::make(__('all_days'), 'all_days')
-            ->sortable()->trueValue('1')
-            ->falseValue('0')
-            ->hideWhenCreating()
-            ->hideWhenUpdating(),
+                ->sortable()->trueValue('1')
+                ->falseValue('0')
+                ->hideWhenCreating()
+                ->hideWhenUpdating(),
             HasMany::make(__('days'), 'days', Day::class),
             BelongsToMany::make(__('payments'), 'payments', PaymentMethod::class)
-            ->hideWhenCreating()->hideWhenUpdating(),
+                ->hideWhenCreating()->hideWhenUpdating(),
         ];
     }
 

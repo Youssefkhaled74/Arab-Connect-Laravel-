@@ -30,15 +30,26 @@ class HomeController extends Controller
         $this->middleware('auth:api', ['except' => ['test', 'category', 'categories', 'payments', 'blogs', 'blog', 'abouts', 'settings']]);
     }
 
-    public function subCategoryBranches($subCategoryId)
+    public function subCategoryBranches(Request $request, $subCategoryId)
     {
-        $subCategory = \App\Models\SubCategory::with('branches')->find($subCategoryId);
+        $perPage = $request->get('per_page', 10); // Default to 10
+
+        $subCategory = \App\Models\SubCategory::find($subCategoryId);
 
         if (!$subCategory) {
             return responseJson(404, "SubCategory not found");
         }
 
-        return responseJson(200, "success", $subCategory);
+        $branches = $subCategory->branches()->paginate($perPage);
+
+        return responseJson(200, "success", [
+            'sub_category' => $subCategory,
+            'branches' => $branches->items(),
+            'current_page' => $branches->currentPage(),
+            'last_page' => $branches->lastPage(),
+            'per_page' => $branches->perPage(),
+            'total' => $branches->total(),
+        ]);
     }
 
     public function categoriesold(Request $request, $page = 0)
