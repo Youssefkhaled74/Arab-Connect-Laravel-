@@ -7,20 +7,24 @@ use App\Nova\User;
 use App\Nova\About;
 use App\Nova\Admin;
 use App\Nova\Branch;
-use App\Nova\Category;
-use Laravel\Nova\Nova;
-use App\Nova\ActivityLog;
 use App\Nova\Contact;
 use App\Nova\Package;
+use App\Nova\Category;
+use App\Nova\Country;
+use Laravel\Nova\Nova;
 
+use App\Nova\ActivityLog;
+
+use App\Nova\SubCategory;
 use App\Nova\BranchChange;
 use App\Nova\PaymentMethod;
+use Laravel\Nova\Menu\Menu;
 use Illuminate\Http\Request;
 use Laravel\Nova\Fields\Text;
 use Laravel\Nova\Fields\Number;
 use Laravel\Nova\Menu\MenuItem;
 use App\Nova\Admin as NovaAdmin;
-use App\Nova\SubCategory;
+// use Laravel\Nova\Fields\Country;
 use Laravel\Nova\Fields\Markdown;
 use Laravel\Nova\Menu\MenuSection;
 use Spatie\Permission\Models\Role;
@@ -59,6 +63,7 @@ class NovaServiceProvider extends NovaApplicationServiceProvider
                         ->canSee(fn () => auth()->user()->can('viewAny', Permission::class)),
                     MenuItem::externalLink('Roles', '/dashboard/resources/roles')
                         ->canSee(fn () => auth()->user()->can('viewAny', Role::class)),
+                    MenuItem::resource(Country::class),
                 ])->icon('file-text')->collapsable(),
 
                 MenuSection::make(__('Logs & Packages'), [
