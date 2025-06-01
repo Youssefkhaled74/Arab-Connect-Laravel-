@@ -581,7 +581,7 @@ class AuthController extends Controller
 
         if ($emailChanged) {
             return response()->json([
-                'status' => false,
+                'status' => 200,
                 'msg' => 'Please verify your new email to complete the update.',
                 'user' => $user
             ], 200);
