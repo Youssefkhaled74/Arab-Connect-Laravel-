@@ -1,4 +1,4 @@
-<?php
+`<?php
 
 namespace App\Http\Controllers\Api;
 
@@ -579,16 +579,31 @@ class AuthController extends Controller
 
         $user->save();
 
+        $imgUrl = $user->img
+            ? env('APP_URL') . '/public/' . $user->img
+            : null;
+
+        $userData = [
+            'id' => $user->id,
+            'name' => $user->name,
+            'mobile' => $user->mobile,
+            'country_code' => $user->country_code,
+            'email' => $user->email,
+            'user_type' => $user->user_type,
+            'country_id' => (int) $user->country_id,
+            'img' => $imgUrl,
+        ];
+
         if ($emailChanged) {
             return response()->json([
                 'status' => 200,
                 'msg' => 'Please verify your new email to complete the update.',
-                'user' => $user
+                'user' => $userData
             ], 200);
         }
 
         return responseJson(200, "Profile updated successfully.", [
-            'user' => $user
+            'user' => $userData
         ]);
     }
     public function verifyNewEmail(Request $request)
@@ -619,3 +634,4 @@ class AuthController extends Controller
         return responseJson(200, "Email updated and verified successfully.");
     }
 }
+`
