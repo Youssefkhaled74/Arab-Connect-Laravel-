@@ -51,7 +51,7 @@ class SubCategory extends Resource
             Text::make(__('Image'), 'img')
                 ->displayUsing(function ($value) {
                     return $value
-                        ? '<img src="' . asset('uploads/' . $value) . '" style="max-width: 120px; border-radius: 8px;" />'
+                        ? '<img src="' . asset('public/' . $value) . '" style="max-width: 120px; border-radius: 8px;" />'
                         : '';
                 })
                 ->asHtml()
