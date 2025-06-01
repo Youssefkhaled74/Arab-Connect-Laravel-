@@ -276,7 +276,7 @@ class AuthController extends Controller
             'country_code' => $user->country_code,
             'email' => $user->email,
             'user_type' => $user->user_type,
-            'country_id' => $user->country_id,
+            'country_id' => (int) $user->country_id,
             'img' => $imgUrl,
         ]);
     }
