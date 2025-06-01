@@ -549,7 +549,7 @@ class AuthController extends Controller
             'mobile' => 'nullable|string|max:60|unique:users,mobile,' . $user->id,
             'country_code' => 'nullable|string|max:10',
             'email' => 'nullable|email|max:255|unique:users,email,' . $user->id,
-            'img' => 'nullable|file|image|max:5120',
+            'img' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp|max:5120',
             'country_id' => 'nullable|integer|exists:countries,id',
         ]);
         if ($validator->fails()) {

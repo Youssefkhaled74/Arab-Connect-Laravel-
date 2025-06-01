@@ -59,33 +59,45 @@ function compressImage($fileName, $path, $quality = 50)
         throw new \Exception('Image does not exist at the specified path: ' . $imagePath);
     }
 
-    $extension = strtolower(pathinfo($imagePath, PATHINFO_EXTENSION));
+    // Detect real MIME type
+    $info = getimagesize($imagePath);
+    if (!$info || !isset($info['mime'])) {
+        throw new \Exception('Cannot determine image type.');
+    }
+    $mime = $info['mime'];
     $imageResource = null;
 
-    if ($extension === 'jpeg' || $extension === 'jpg') {
-        $imageResource = imagecreatefromjpeg($imagePath);
-        imagejpeg($imageResource, $imagePath, $quality);
-    } elseif ($extension === 'png') {
-        $imageResource = imagecreatefrompng($imagePath);
-        $pngQuality = (int) round(9 - ($quality / 100 * 9));
-        imagepng($imageResource, $imagePath, $pngQuality);
-    } elseif ($extension === 'gif') {
-        $imageResource = imagecreatefromgif($imagePath);
-        imagegif($imageResource, $imagePath);
-    } elseif ($extension === 'webp') {
-        $imageResource = imagecreatefromwebp($imagePath);
-        imagewebp($imageResource, $imagePath, $quality);
-    } elseif ($extension === 'bmp') {
-        $imageResource = imagecreatefrombmp($imagePath);
-        imagebmp($imageResource, $imagePath);
-    } else {
-        throw new \Exception('Unsupported image type. Only JPG, PNG, GIF, WEBP, and BMP are supported.');
+    switch ($mime) {
+        case 'image/jpeg':
+            $imageResource = imagecreatefromjpeg($imagePath);
+            imagejpeg($imageResource, $imagePath, $quality);
+            break;
+        case 'image/png':
+            $imageResource = imagecreatefrompng($imagePath);
+            $pngQuality = (int) round(9 - ($quality / 100 * 9));
+            imagepng($imageResource, $imagePath, $pngQuality);
+            break;
+        case 'image/gif':
+            $imageResource = imagecreatefromgif($imagePath);
+            imagegif($imageResource, $imagePath);
+            break;
+        case 'image/webp':
+            $imageResource = imagecreatefromwebp($imagePath);
+            imagewebp($imageResource, $imagePath, $quality);
+            break;
+        case 'image/bmp':
+            $imageResource = imagecreatefrombmp($imagePath);
+            imagebmp($imageResource, $imagePath);
+            break;
+        default:
+            throw new \Exception('Unsupported image type. Only JPG, PNG, GIF, WEBP, and BMP are supported.');
     }
 
-    imagedestroy($imageResource);
+    if ($imageResource) {
+        imagedestroy($imageResource);
+    }
     return $path . $fileName;
 }
-
 function generateGoogleMapsLink(float $latitude, float $longitude): string
 {
     return "https://www.google.com/maps?q={$latitude},{$longitude}";
