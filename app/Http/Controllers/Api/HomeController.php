@@ -85,7 +85,7 @@ class HomeController extends Controller
         // Map categories to add full image URL
         $categoriesData = collect($categories->items())->map(function ($category) {
             $category->img = $category->img
-                ? env('APP_URL') . '/uploads/' . $category->img
+                ? env('APP_URL') . '/public/' . $category->img
                 : null;
             return $category;
         });
@@ -96,6 +96,7 @@ class HomeController extends Controller
         return responseJson(200, "success", [
             'data' => $categoriesData,
             'count' => $count,
+            'page' => $categories->currentPage(),
             'current_page' => $categories->currentPage(),
             'last_page' => $categories->lastPage(),
             'per_page' => $categories->perPage(),

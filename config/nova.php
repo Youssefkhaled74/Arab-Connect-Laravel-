@@ -163,7 +163,7 @@ return [
     */
 
     'brand' => [
-        'logo' => public_path('logo/egypin.svg'),
+        'logo' => public_path('logo/test.svg'),
 
     //     'colors' => [
     //         "400" => "24, 182, 155, 0.5",
