@@ -634,4 +634,3 @@ class AuthController extends Controller
         return responseJson(200, "Email updated and verified successfully.");
     }
 }
-`
