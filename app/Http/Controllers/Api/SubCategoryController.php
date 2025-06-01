@@ -29,11 +29,13 @@ class SubCategoryController extends Controller
         return response()->json([
             'status' => 200,
             'msg' => 'success',
-            'data' => $subCategories->items(),
-            'page' => $subCategories->currentPage(),
-            'last_page' => $subCategories->lastPage(),
-            'per_page' => $subCategories->perPage(),
-            'total' => $subCategories->total(),
+            'data' => [
+                'data' => $subCategories->items(),
+                'page' => $subCategories->currentPage(),
+                'last_page' => $subCategories->lastPage(),
+                'per_page' => $subCategories->perPage(),
+                'total' => $subCategories->total(),
+            ]
         ], 200);
     }
 }
