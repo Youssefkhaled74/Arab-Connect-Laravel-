@@ -41,9 +41,12 @@ class HomeController extends Controller
         }
 
         $branches = $subCategory->branches()->paginate($perPage);
-
+        
         $branchesData = collect($branches->items())->map(function ($branch) use ($subCategory) {
             $branch->sub_category_name = $subCategory->name;
+            $branch->img = $branch->img
+                ? env('APP_URL') . '/public/' . $branch->img
+                : null;
             return $branch;
         });
 
