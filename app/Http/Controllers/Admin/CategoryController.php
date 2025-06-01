@@ -20,9 +20,9 @@ class CategoryController extends Controller
 
     public function index($offset, $limit)
     {
-        try{
+        try {
             return $this->categories->index($offset, $limit);
-        }catch(\Exception $e){
+        } catch (\Exception $e) {
             flash()->error('There is something wrong , please contact technical support');
             return back();
         }
@@ -35,11 +35,11 @@ class CategoryController extends Controller
 
     public function store(CategoryStoreRequest $request)
     {
-        try{
+        try {
             $this->categories->store($request);
             flash()->success('Success');
             return back();
-        }catch(\Exception $e){
+        } catch (\Exception $e) {
             flash()->error('There is something wrong , please contact technical support');
             return back();
         }
@@ -52,11 +52,11 @@ class CategoryController extends Controller
 
     public function update(CategoryUpdateRequest $request, $id)
     {
-        try{
+        try {
             $this->categories->update($request, $id);
             flash()->success('Success');
             return back();
-        }catch(\Exception $e){
+        } catch (\Exception $e) {
             flash()->error('There is something wrong , please contact technical support');
             return back();
         }
@@ -64,11 +64,11 @@ class CategoryController extends Controller
 
     public function activate(Request $request)
     {
-        try{
+        try {
             $this->categories->activate($request->record_id);
             flash()->success('Success');
             return back();
-        }catch(\Exception $e){
+        } catch (\Exception $e) {
             flash()->error('There is something wrong , please contact technical support');
             return back();
         }
@@ -76,11 +76,11 @@ class CategoryController extends Controller
 
     public function delete(Request $request)
     {
-        try{
+        try {
             $this->categories->delete($request->record_id);
             flash()->success('Success');
             return back();
-        }catch(\Exception $e){
+        } catch (\Exception $e) {
             flash()->error('There is something wrong , please contact technical support');
             return back();
         }
@@ -124,14 +124,13 @@ class CategoryController extends Controller
 
     public function back(Request $request)
     {
-        try{
+        try {
             $this->categories->back($request->record_id);
             flash()->success('Success');
             return back();
-        }catch(\Exception $e){
+        } catch (\Exception $e) {
             flash()->error('There is something wrong , please contact technical support');
             return back();
         }
     }
-
 }
