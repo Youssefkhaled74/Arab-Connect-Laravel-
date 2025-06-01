@@ -11,23 +11,29 @@ class SubCategoryController extends Controller
 {
     public function getByCategory(Request $request, $category_id)
     {
-        //check if the category active 
-        $category = Category::get()->where('id', $category_id)->first();
-        if($category->is_activate == 0 ){
+        // Check if the category is active
+        $category = Category::where('id', $category_id)->first();
+        if (!$category || $category->is_activate == 0) {
             return response()->json([
-                'status' =>200,
+                'status' => 200,
                 'msg' => 'The category not Active'
             ]);
         }
+
         $perPage = $request->get('per_page', 10);
+        $page = $request->get('page', 1);
 
         $subCategories = SubCategory::where('category_id', $category_id)
-            ->paginate($perPage);
+            ->paginate($perPage, ['*'], 'page', $page);
 
         return response()->json([
             'status' => 200,
             'msg' => 'success',
-            'data' => $subCategories
+            'data' => $subCategories->items(),
+            'page' => $subCategories->currentPage(),
+            'last_page' => $subCategories->lastPage(),
+            'per_page' => $subCategories->perPage(),
+            'total' => $subCategories->total(),
         ], 200);
     }
 }
