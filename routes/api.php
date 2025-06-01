@@ -53,7 +53,7 @@ Route::group(['middleware' => ['api']], function ($router) {
     Route::post('get/branches/{page?}', [BranchController::class, 'branches']);
     Route::get('categories/{page?}', [HomeController::class, 'categories']);
     Route::get('sub-categories/{category_id}', [SubCategoryController::class, 'getByCategory']);
-    Route::get('category/{id?}', [HomeController::class, 'category']);
+    Route::get('sub-category/{id}/branches', [HomeController::class, 'subCategoryBranches']);
     Route::get('blogs/{page?}', [HomeController::class, 'blogs']);
     Route::get('blog/{id?}', [HomeController::class, 'blog']);
     Route::get('abouts/{type?}', [HomeController::class, 'abouts']);

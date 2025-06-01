@@ -30,13 +30,15 @@ class HomeController extends Controller
         $this->middleware('auth:api', ['except' => ['test', 'category', 'categories', 'payments', 'blogs', 'blog', 'abouts', 'settings']]);
     }
 
-    public function category($id = 0)
+    public function subCategoryBranches($subCategoryId)
     {
-        $category = $this->category->active()->unArchive()->where('id', $id)->with('branches')->first();
-        return responseJson(200, "success", $category);
+        $subCategory = \App\Models\SubCategory::with('branches')->find($subCategoryId);
 
-        // $categories = $this->category->unArchive()->orderBy('id', 'DESC')->offset(PAGINATION_COUNT_FRONT * $page)->limit(PAGINATION_COUNT_FRONT)->get();
-        // return responseJson(200, "success", $categories);
+        if (!$subCategory) {
+            return responseJson(404, "SubCategory not found");
+        }
+
+        return responseJson(200, "success", $subCategory);
     }
 
     public function categoriesold(Request $request, $page = 0)
@@ -69,12 +71,19 @@ class HomeController extends Controller
             ->orderBy('id', 'ASC')
             ->paginate($perPage);
 
+        // Map categories to add full image URL
+        $categoriesData = collect($categories->items())->map(function ($category) {
+            $category->img = $category->img
+                ? env('APP_URL') . '/uploads/' . $category->img
+                : null;
+            return $category;
+        });
+
         $count = $this->category->active()->unArchive()->count();
         $description = DB::table('nova_settings')->where('key', 'description_category')->select('value')->first();
 
         return responseJson(200, "success", [
-            'description' => $description,
-            'data' => $categories->items(),
+            'data' => $categoriesData,
             'count' => $count,
             'current_page' => $categories->currentPage(),
             'last_page' => $categories->lastPage(),

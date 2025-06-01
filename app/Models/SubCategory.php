@@ -20,4 +20,9 @@ class SubCategory extends Model
     {
         return $this->belongsTo(\App\Models\Category::class);
     }
+
+    public function branches()
+    {
+        return $this->hasMany(\App\Models\Branch::class, 'sub_category_id');
+    }
 }
