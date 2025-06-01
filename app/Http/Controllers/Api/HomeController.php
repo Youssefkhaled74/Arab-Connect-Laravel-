@@ -27,7 +27,7 @@ class HomeController extends Controller
         $this->blog = $blog;
         $this->about = $about;
         $this->paymentMethod = $paymentMethod;
-        $this->middleware('auth:api', ['except' => ['test', 'category', 'categories', 'payments', 'blogs', 'blog', 'abouts','settings']]);
+        $this->middleware('auth:api', ['except' => ['test', 'category', 'categories', 'payments', 'blogs', 'blog', 'abouts', 'settings']]);
     }
 
     public function category($id = 0)
@@ -42,50 +42,46 @@ class HomeController extends Controller
     public function categoriesold(Request $request, $page = 0)
     {
         $query = $request->get('search');
-        
+
         if (!is_null($query)) {
             $categories = $this->category->active()
                 ->orderBy('id', 'ASC')
                 ->modelSearch($query)
-                ->paginate(5); 
+                ->paginate(5);
         } else {
             $categories = $this->category->active()
                 ->unArchive()
                 ->orderBy('id', 'ASC')
-                ->offset(5 * $page) 
-                ->limit(5) 
+                ->offset(5 * $page)
+                ->limit(5)
                 ->get();
         }
-        
+
         return responseJson(200, "success", $categories);
     }
 
-	 public function categories(Request $request, $page = 0)
-	{
-		$query = $request->get('search');
+    public function categories(Request $request)
+    {
+        $perPage = $request->get('per_page', 10); // Default to 10 if not provided
 
-		if (!is_null($query)) {
-			$categories = $this->category->active()
-				->orderBy('id', 'ASC')
-				->modelSearch($query)
-				->paginate(5); 
-		} else {
-			$categories = $this->category->active()
-				->unArchive()
-				->orderBy('id', 'ASC')
-				->offset(5 * $page) 
-				->limit(5) 
-				->get();
-		}
+        $categories = $this->category->active()
+            ->unArchive()
+            ->orderBy('id', 'ASC')
+            ->paginate($perPage);
 
-		$count = $this->category->active()->unArchive()->count();
-        $description =  DB::table('nova_settings')->where('key', 'description_category')->select('value')->first();
-		return responseJson(200, "success", [
+        $count = $this->category->active()->unArchive()->count();
+        $description = DB::table('nova_settings')->where('key', 'description_category')->select('value')->first();
+
+        return responseJson(200, "success", [
             'description' => $description,
-			'data' => $categories,
-			'count' => $count
-		]);
-	}
+            'data' => $categories->items(),
+            'count' => $count,
+            'current_page' => $categories->currentPage(),
+            'last_page' => $categories->lastPage(),
+            'per_page' => $categories->perPage(),
+            'total' => $categories->total(),
+        ]);
+    }
     public function payments($page = 0)
     {
         $payments = $this->paymentMethod->active()->unArchive()->orderBy('id', 'DESC')->offset(PAGINATION_COUNT_FRONT * $page)->limit(PAGINATION_COUNT_FRONT)->get();
@@ -97,7 +93,7 @@ class HomeController extends Controller
         $blogs = $this->blog->active()->unArchive()->orderBy('id', 'DESC')->offset(PAGINATION_COUNT_FRONT * $page)->limit(PAGINATION_COUNT_FRONT)->get();
         return responseJson(200, "success", $blogs);
     }
-    
+
     public function blog($id = 0)
     {
         $blog = $this->blog->active()->unArchive()->where('id', $id)->get();

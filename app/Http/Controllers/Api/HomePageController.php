@@ -23,17 +23,26 @@ class HomePageController extends Controller
         $lat = $request->lat;
         $lon = $request->lon;
 
-        // Haversine formula for distance in km
-        $branches = Branch::select('*', DB::raw(
-            "(6371 * acos(cos(radians($lat)) * cos(radians(lat)) * cos(radians(lon) - radians($lon)) + sin(radians($lat)) * sin(radians(lat)))) AS distance"
-        ))
+        // Only select branches with valid lat/lon
+        $branches = Branch::whereNotNull('lat')
+            ->whereNotNull('lon')
+            ->where('lat', '!=', '')
+            ->where('lon', '!=', '')
+            ->whereRaw('lat REGEXP "^-?[0-9]+(\.[0-9]+)?$"')
+            ->whereRaw('lon REGEXP "^-?[0-9]+(\.[0-9]+)?$"')
+            ->select('*', DB::raw(
+                "(6371 * acos(
+                cos(radians($lat)) * cos(radians(lat)) * cos(radians(lon) - radians($lon)) +
+                sin(radians($lat)) * sin(radians(lat))
+            )) AS distance"
+            ))
             ->orderBy('distance')
             ->limit(20)
             ->get();
 
         // Add 'how_far' key to each branch
         $branches->transform(function ($branch) {
-            $branch->how_far = round($branch->distance, 2); // in km
+            $branch->how_far = isset($branch->distance) ? round($branch->distance, 2) : null; // in km
             unset($branch->distance);
             return $branch;
         });
