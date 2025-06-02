@@ -246,15 +246,12 @@ class BranchService
         return ltrim($imgs, ',');
     }
 
-    public function getFavorites()
+    public function getFavorites($perPage = 10, $page = 1)
     {
         return auth()->guard('api')->user()->favorites()
-            // ->whereNotNull('branches.deleted_at')
-            // ->where('branches.is_activate', 1)
-            // ->where('branches.is_verified', 1)
             ->where('branches.is_published', 1)
             ->where('branches.expire_at', '>=', now())
-            ->get();
+            ->paginate($perPage, ['*'], 'page', $page);
     }
 
     public function favorites($id)
