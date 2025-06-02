@@ -12,42 +12,58 @@ class HomePageController extends Controller
 {
     public function nearestBranches(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'lat' => 'required|numeric',
-            'lon' => 'required|numeric',
-        ]);
-        if ($validator->fails()) {
-            return responseJson(400, "Bad Request", $validator->errors()->first());
-        }
+        $perPage = $request->get('per_page', 10);
+        $page = $request->get('page', 1);
 
-        $lat = $request->lat;
-        $lon = $request->lon;
+        $lat = $request->get('lat');
+        $lon = $request->get('lon');
 
-        // Only select branches with valid lat/lon
-        $branches = Branch::whereNotNull('lat')
+        $query = Branch::whereNotNull('lat')
             ->whereNotNull('lon')
             ->where('lat', '!=', '')
             ->where('lon', '!=', '')
             ->whereRaw('lat REGEXP "^-?[0-9]+(\.[0-9]+)?$"')
-            ->whereRaw('lon REGEXP "^-?[0-9]+(\.[0-9]+)?$"')
-            ->select('*', DB::raw(
+            ->whereRaw('lon REGEXP "^-?[0-9]+(\.[0-9]+)?$"');
+
+        if ($lat !== null && $lon !== null) {
+            // Validate coordinates
+            $validator = Validator::make($request->all(), [
+                'lat' => 'required|numeric',
+                'lon' => 'required|numeric',
+            ]);
+            if ($validator->fails()) {
+                return responseJson(400, "Bad Request", $validator->errors()->first());
+            }
+
+            $query = $query->select('*', DB::raw(
                 "(6371 * acos(
                 cos(radians($lat)) * cos(radians(lat)) * cos(radians(lon) - radians($lon)) +
                 sin(radians($lat)) * sin(radians(lat))
             )) AS distance"
-            ))
-            ->orderBy('distance')
-            ->limit(20)
-            ->get();
+            ))->orderBy('distance');
+        }
 
-        // Add 'how_far' key to each branch
-        $branches->transform(function ($branch) {
-            $branch->how_far = isset($branch->distance) ? round($branch->distance, 2) : null; // in km
-            unset($branch->distance);
+        $branches = $query->paginate($perPage, ['*'], 'page', $page);
+
+        // Add 'how_far' key if distance exists, and format img as full URL
+        $branchesData = collect($branches->items())->map(function ($branch) {
+            if (isset($branch->distance)) {
+                $branch->how_far = round($branch->distance, 2);
+                unset($branch->distance);
+            }
+            $branch->img = $branch->img
+                ? env('APP_URL') . '/public/' . $branch->img
+                : null;
             return $branch;
         });
 
-        return responseJson(200, "success", $branches);
+        return responseJson(200, "success", [
+            'branches' => $branchesData,
+            'page' => $branches->currentPage(),
+            'per_page' => $branches->perPage(),
+            'last_page' => $branches->lastPage(),
+            'total' => $branches->total(),
+        ]);
     }
 
 

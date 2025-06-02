@@ -40,7 +40,10 @@ class HomeController extends Controller
             return responseJson(404, "SubCategory not found");
         }
 
-        $branches = $subCategory->branches()->paginate($perPage);
+        // Only get branches where is_published is true
+        $branches = $subCategory->branches()
+            ->where('is_published', 1)
+            ->paginate($perPage);
 
         $branchesData = collect($branches->items())->map(function ($branch) use ($subCategory) {
             $branch->sub_category_name = $subCategory->name;
@@ -53,7 +56,7 @@ class HomeController extends Controller
         return responseJson(200, "success", [
             'sub_category' => $subCategory,
             'branches' => $branchesData,
-            'page' => $branches->currentPage(), // Add this line
+            'page' => $branches->currentPage(),
             'current_page' => $branches->currentPage(),
             'last_page' => $branches->lastPage(),
             'per_page' => $branches->perPage(),
