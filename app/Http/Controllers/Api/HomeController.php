@@ -41,7 +41,7 @@ class HomeController extends Controller
         }
 
         $branches = $subCategory->branches()->paginate($perPage);
-        
+
         $branchesData = collect($branches->items())->map(function ($branch) use ($subCategory) {
             $branch->sub_category_name = $subCategory->name;
             $branch->img = $branch->img
@@ -53,6 +53,7 @@ class HomeController extends Controller
         return responseJson(200, "success", [
             'sub_category' => $subCategory,
             'branches' => $branchesData,
+            'page' => $branches->currentPage(), // Add this line
             'current_page' => $branches->currentPage(),
             'last_page' => $branches->lastPage(),
             'per_page' => $branches->perPage(),
