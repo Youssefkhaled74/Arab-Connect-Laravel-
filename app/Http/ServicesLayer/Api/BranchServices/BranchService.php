@@ -30,15 +30,19 @@ class BranchService
 
     public function details($id)
     {
-        //     return $this->branch->unArchive()->where('id', $id)->where('owner_id', auth()->guard('api')->user()->id)->with([
-        return $this->branch->where('id', $id)->with([
+        $branch = $this->branch->where('id', $id)->with([
             'payments',
             'days',
             'related_branches' => function ($query) use ($id) {
                 $query->whereNotIn('id', [$id]);
             }
-        ])
-            ->first();
+        ])->first();
+
+        if ($branch) {
+            $branch->country_id = $branch->country_id ? (int) $branch->country_id : null;
+        }
+
+        return $branch;
     }
 
     public function store($request)

@@ -58,7 +58,7 @@ Route::group(['middleware' => ['api']], function ($router) {
     Route::get('blog/{id?}', [HomeController::class, 'blog']);
     Route::get('abouts/{type?}', [HomeController::class, 'abouts']);
     Route::get('countries', [CountryController::class, 'index']);
-    Route::post('nearest-branches', [HomePageController::class, 'nearestBranches']);
+    Route::get('nearest-branches', [HomePageController::class, 'nearestBranches']);
     Route::get('check-token', [HomePageController::class, 'checkToken']);
 
 
