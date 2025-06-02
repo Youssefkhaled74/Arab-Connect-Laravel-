@@ -40,6 +40,14 @@ class BranchService
 
         if ($branch) {
             $branch->country_id = $branch->country_id ? (int) $branch->country_id : null;
+
+            // Cast country_id for each related branch
+            if ($branch->related_branches) {
+                $branch->related_branches->transform(function ($related) {
+                    $related->country_id = $related->country_id ? (int) $related->country_id : null;
+                    return $related;
+                });
+            }
         }
 
         return $branch;
