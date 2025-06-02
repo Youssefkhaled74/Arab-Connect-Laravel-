@@ -49,4 +49,15 @@ class HomePageController extends Controller
 
         return responseJson(200, "success", $branches);
     }
+
+
+    //checkToken
+    public function checkToken(Request $request)
+    {
+        if ($request->user()) {
+            return responseJson(200, 'Token valid', true);
+        } else {
+            return responseJson(404, 'Token invalid',false);
+        }
+    }
 }

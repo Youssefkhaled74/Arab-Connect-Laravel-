@@ -27,7 +27,7 @@ class HomeController extends Controller
         $this->blog = $blog;
         $this->about = $about;
         $this->paymentMethod = $paymentMethod;
-        $this->middleware('auth:api', ['except' => ['test', 'category', 'categories', 'payments', 'blogs', 'blog', 'abouts', 'settings']]);
+        $this->middleware('auth:api', ['except' => ['test', 'category', 'categories', 'payments', 'blogs', 'blog', 'abouts', 'settings', 'subCategoryBranches']]);
     }
 
     public function subCategoryBranches(Request $request, $subCategoryId)
