@@ -54,10 +54,10 @@ class HomePageController extends Controller
     //checkToken
     public function checkToken(Request $request)
     {
-        if ($request->user()) {
+        if (auth('api')->check()) {
             return responseJson(200, 'Token valid', true);
         } else {
-            return responseJson(404, 'Token invalid',false);
+            return responseJson(404, 'Token invalid', false);
         }
     }
 }
