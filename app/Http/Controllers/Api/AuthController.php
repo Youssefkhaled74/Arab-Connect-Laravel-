@@ -293,8 +293,14 @@ class AuthController extends Controller
 
             $branches = $this->branchService->getFavorites($perPage, $page);
 
+            // Add subcategory name to each branch
+            $branchesData = collect($branches->items())->map(function ($branch) {
+                $branch->sub_category_name = $branch->subCategory ? $branch->subCategory->name : null;
+                return $branch;
+            });
+
             return responseJson(200, "success", [
-                'branches' => $branches->items(),
+                'branches' => $branchesData,
                 'page' => $branches->currentPage(),
                 'per_page' => $branches->perPage(),
                 'last_page' => $branches->lastPage(),
