@@ -50,9 +50,8 @@ class BranchController extends Controller
             'location' => 'required|string|max:1550',
             // 'map_location' => 'required|string|max:1550',
             'category_id' => 'nullable|exists:categories,id',
-            'imgs' => 'required|array',
-            'imgs.*' => 'file|image|max:5125',
-
+            'country_id' => 'required|exists:countries,id', // <-- Add this line
+            'img' => 'required|file|image|max:5120', // <-- Change to array of images
             'payments' => 'nullable|array',
             'payments.*' => 'nullable|exists:payment_methods,id',
             'email' => 'nullable|string|max:255',
@@ -75,7 +74,7 @@ class BranchController extends Controller
         if ($validator->fails()) {
             return responseJson(400, "Bad Request", $validator->errors()->first());
         }
-        if (!$request->hasFile('imgs') == null && count($request->file('imgs')) > 10) {
+        if ($request->hasFile('imgs') && count($request->file('imgs')) > 10) {
             return responseJson(500, "not accepted more than 10 imgs");
         }
         $this->branchService->store($request, auth()->user()->id);

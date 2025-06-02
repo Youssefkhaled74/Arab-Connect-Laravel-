@@ -24,7 +24,7 @@ class Branch extends Model implements HasMedia
         'country_code',
         'location',
         'map_location',
-        'imgs',
+        'img',
         'tax_card',
         'commercial_register',
         'face',

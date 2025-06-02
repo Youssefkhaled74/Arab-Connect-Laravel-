@@ -76,11 +76,10 @@ class Branch extends Resource
                 ->hideWhenCreating()
                 ->hideWhenUpdating(),
 
-            Text::make(__('imgs'), 'imgs')
+            Text::make(__('img'), 'img')
                 ->displayUsing(function ($value) {
-                    return collect(explode(',', $value))->map(function ($path) {
-                        return '<a href="' . asset('public/' . $path) . '"><img src="' . asset('public/' . $path) . '" style="max-width: 300px; margin: 10px;border-radius: 10px;" /></a>';
-                    })->implode('');
+                    if (!$value) return '';
+                    return '<a href="' . asset('public/' . $value) . '"><img src="' . asset('public/' . $value) . '" style="max-width: 300px; margin: 10px;border-radius: 10px;" /></a>';
                 })
                 ->asHtml()
                 ->onlyOnDetail(),

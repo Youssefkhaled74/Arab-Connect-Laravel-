@@ -25,7 +25,18 @@ class BranchService
 
     public function userBranches()
     {
-        return auth()->user()->branches()->with('payments')->where('expire_at', '>=', now())->get();
+        $branches = auth()->user()->branches()
+            ->with('payments', 'subCategory')
+            ->where('expire_at', '>=', now())
+            ->get();
+
+        $branches->transform(function ($branch) {
+            $branch->sub_category_name = $branch->subCategory ? $branch->subCategory->name : null;
+            $branch->country_id = $branch->country_id ? (int) $branch->country_id : null;
+            return $branch;
+        });
+
+        return $branches;
     }
 
     public function details($id)
@@ -55,15 +66,19 @@ class BranchService
 
     public function store($request)
     {
-        if (!$request->hasFile('tax_card') == null) {
-            $tax_card = uploadIamge($request->file('tax_card'), 'branches'); // function on helper file to upload file
+        if ($request->hasFile('tax_card')) {
+            $tax_card = uploadIamge($request->file('tax_card'), 'branches');
         }
-        if (!$request->hasFile('commercial_register') == null) {
-            $commercial_register = uploadIamge($request->file('commercial_register'), 'branches'); // function on helper file to upload file
+        if ($request->hasFile('commercial_register')) {
+            $commercial_register = uploadIamge($request->file('commercial_register'), 'branches');
         }
-        if (!$request->hasFile('imgs') == null) {
-            $imgs = uploadIamges($request->file('imgs'), 'branches'); // function on helper file to upload file
+
+        // Handle single image upload with field name 'img'
+        $img = null;
+        if ($request->hasFile('img')) {
+            $img = uploadIamge($request->file('img'), 'branches');
         }
+
         $map_location = generateGoogleMapsLink($request->lat, $request->lon);
 
         $branch = $this->branch->create([
@@ -72,6 +87,7 @@ class BranchService
             'location' => $request->location ?? null,
             'map_location' => $map_location ?? null,
             'category_id' => $request->category_id ?? null,
+            'country_id' => $request->country_id ?? null,
             'email' => $request->email ?? null,
             'face' => $request->face ?? null,
             'insta' => $request->insta ?? null,
@@ -79,7 +95,7 @@ class BranchService
             'website' => $request->website ?? null,
             'lat' => $request->lat ?? null,
             'lon' => $request->lon ?? null,
-            'imgs' => $imgs ?? null,
+            'img' => $img,
             'tax_card' => $tax_card ?? null,
             'commercial_register' => $commercial_register ?? null,
             'uuid' => generateCustomUUID(),
@@ -87,6 +103,7 @@ class BranchService
             'expire_at' => now()->addMonths(6),
             'all_days' => $request->all_days ?? 0,
         ]);
+
         if (isset($request->payments) && count($request->payments) > 0) {
             $branch->payments()->sync(array_values($request->payments));
         }
