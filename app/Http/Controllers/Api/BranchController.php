@@ -23,14 +23,15 @@ class BranchController extends Controller
 
     public function branch($id = 0)
     {
-
-        $branch = $this->branch->unArchive()->where('id', $id)->with([
-            'payments',
-            'days',
-            'related_branches' => function ($query) use ($id) {
-                $query->whereNotIn('id', [$id]);
-            }
-        ])
+        $branch = $this->branch->unArchive()
+            ->where('id', $id)
+            ->with([
+                'payments',
+                'days',
+                'related_branches' => function ($query) use ($id) {
+                    $query->whereNotIn('id', [$id]);
+                }
+            ])
             ->where('expire_at', '>=', now())
             ->first();
         return responseJson(200, "success", $branch);

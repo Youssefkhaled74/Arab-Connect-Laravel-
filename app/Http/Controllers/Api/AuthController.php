@@ -282,7 +282,7 @@ class AuthController extends Controller
     }
     public function userBranches()
     {
-        $branches['branches'] = $this->branchService->userBranches();
+        $branches = $this->branchService->userBranches();
         return responseJson(200, "success", $branches);
     }
     public function getFavorites(Request $request)

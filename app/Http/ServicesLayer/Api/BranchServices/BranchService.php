@@ -23,22 +23,33 @@ class BranchService
         $this->favorite = $favorite;
     }
 
-    public function userBranches()
+    public function userBranches($perPage = 10, $page = 1)
     {
+        $perPage = request()->get('per_page', $perPage);
+        $page = request()->get('page', $page);
+
         $branches = auth()->user()->branches()
             ->with('payments', 'subCategory')
             ->where('expire_at', '>=', now())
-            ->get();
+            ->paginate($perPage, ['*'], 'page', $page);
 
-        $branches->transform(function ($branch) {
+        $branches->getCollection()->transform(function ($branch) {
             $branch->sub_category_name = $branch->subCategory ? $branch->subCategory->name : null;
             $branch->country_id = $branch->country_id ? (int) $branch->country_id : null;
+            $branch->img = $branch->img
+                ? env('APP_URL') . '/public/' . $branch->img
+                : null;
             return $branch;
         });
 
-        return $branches;
+        return [
+            'branches' => $branches->items(),
+            'page' => $branches->currentPage(),
+            'per_page' => $branches->perPage(),
+            'last_page' => $branches->lastPage(),
+            'total' => $branches->total(),
+        ];
     }
-
     public function details($id)
     {
         $branch = $this->branch->where('id', $id)->with([
