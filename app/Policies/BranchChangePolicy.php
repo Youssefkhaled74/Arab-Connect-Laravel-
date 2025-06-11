@@ -24,12 +24,15 @@ class BranchChangePolicy
 
     public function update(Admin $user, BranchChange $branchChange): bool
     {
-        return $user->can('updateBranchChange');
+        return true;
     }
 
     public function delete(Admin $user, BranchChange $branchChange): bool
     {
         return $user->can('deleteBranchChange');
     }
-
+    public function approveChanges(Admin $user, BranchChange $branchChange): bool
+    {
+        return true;
+    }
 }

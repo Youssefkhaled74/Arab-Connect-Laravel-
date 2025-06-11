@@ -27,7 +27,7 @@ class BranchChange extends Model
         'website',
         'lon',
         'lat',
-        'imgs',
+        'img',
         'tax_card',
         'commercial_register',
         'is_activate',

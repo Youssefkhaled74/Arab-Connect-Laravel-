@@ -11,6 +11,7 @@ use Laravel\Nova\Actions\Action;
 use Illuminate\Support\Collection;
 use App\Models\BranchPaymentChange;
 use Laravel\Nova\Fields\ActionFields;
+use Illuminate\Http\Request;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Laravel\Nova\Http\Requests\NovaRequest;
@@ -67,7 +68,7 @@ class ApproveChanges extends Action
                 'all_days' => $model->all_days ?? $branch->all_days,
             ]);
             $dayChanges = DayChange::where('branch_id', $model->id)->exists();
-            if($dayChanges){
+            if ($dayChanges) {
                 $day = Day::where('branch_id', $model->branch_id)->delete();
                 foreach ($model->dayChanges as $day) {
                     Day::create([
@@ -79,7 +80,7 @@ class ApproveChanges extends Action
                 }
             }
             $paymentChanges = BranchPaymentChange::where('branch_id', $model->id)->exists();
-            if($paymentChanges){
+            if ($paymentChanges) {
                 $payment = BranchPayment::where('branch_id', $model->branch_id)->delete();
                 foreach ($model->payment_methods as $payment) {
                     BranchPayment::create([
@@ -104,5 +105,9 @@ class ApproveChanges extends Action
     public function fields(NovaRequest $request)
     {
         return [];
+    }
+    public function authorizedToRun(Request $request, $model)
+    {
+        return true; // or your custom logic
     }
 }

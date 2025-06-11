@@ -293,9 +293,12 @@ class AuthController extends Controller
 
             $branches = $this->branchService->getFavorites($perPage, $page);
 
-            // Add subcategory name to each branch
+            // Add subcategory name and full img URL to each branch
             $branchesData = collect($branches->items())->map(function ($branch) {
                 $branch->sub_category_name = $branch->subCategory ? $branch->subCategory->name : null;
+                $branch->img = $branch->img
+                    ? env('APP_URL') . '/public/' . $branch->img
+                    : null;
                 return $branch;
             });
 

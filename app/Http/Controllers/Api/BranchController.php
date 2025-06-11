@@ -90,7 +90,7 @@ class BranchController extends Controller
                 'mobile' => 'required|string|max:255',
                 'location' => 'required|string|max:1550',
                 'category_id' => 'nullable|exists:categories,id',
-                'country_id' => 'required|integer|exists:countries,id',
+                'country_id' => 'nullable|integer|exists:countries,id',
                 'img' => 'nullable|file|image|max:5120', // single image
                 'payments' => 'nullable|array',
                 'payments.*' => 'nullable|exists:payment_methods,id',
