@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
-use App\Http\ServicesLayer\Api\BranchServices\BranchService;
 use App\Models\Branch;
+use App\Models\Review;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
+use App\Http\ServicesLayer\Api\BranchServices\BranchService;
 
 class BranchController extends Controller
 {
@@ -21,6 +22,12 @@ class BranchController extends Controller
         $this->middleware('auth:api', ['except' => ['details', 'branches', 'branch']]);
     }
 
+    /**
+     * Get branch by id.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function branch($id = 0)
     {
         $branch = $this->branch->unArchive()
@@ -160,5 +167,30 @@ class BranchController extends Controller
             ->get();
 
         return responseJson(200, "success", $branches);
+    }
+
+
+    public function addReview(Request $request, $branchId)
+    {
+        $request->validate([
+            'stars' => 'required|integer|min:1|max:5',
+            'comment' => 'nullable|string|max:1000',
+        ]);
+        if(!auth()->check()) {
+            return responseJson(401, 'Unauthorized', null);
+        }
+
+        if (!$branchId || !Branch::unArchive()->find($branchId)) {
+            return responseJson(404, 'Branch not found', null);
+        }
+
+        $review = Review::create([
+            'user_id' => auth()->id(),
+            'branch_id' => $branchId,
+            'stars' => $request->stars,
+            'comment' => $request->comment,
+        ]);
+
+        return responseJson(200, 'Review added successfully', $review);
     }
 }

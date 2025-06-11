@@ -7,14 +7,15 @@ use App\Nova\User;
 use App\Nova\About;
 use App\Nova\Admin;
 use App\Nova\Branch;
+use App\Nova\Review;
 use App\Nova\Contact;
+use App\Nova\Country;
 use App\Nova\Package;
 use App\Nova\Category;
-use App\Nova\Country;
+
 use Laravel\Nova\Nova;
 
 use App\Nova\ActivityLog;
-
 use App\Nova\SubCategory;
 use App\Nova\BranchChange;
 use App\Nova\PaymentMethod;
@@ -23,8 +24,8 @@ use Illuminate\Http\Request;
 use Laravel\Nova\Fields\Text;
 use Laravel\Nova\Fields\Number;
 use Laravel\Nova\Menu\MenuItem;
-use App\Nova\Admin as NovaAdmin;
 // use Laravel\Nova\Fields\Country;
+use App\Nova\Admin as NovaAdmin;
 use Laravel\Nova\Fields\Markdown;
 use Laravel\Nova\Menu\MenuSection;
 use Spatie\Permission\Models\Role;
@@ -59,6 +60,7 @@ class NovaServiceProvider extends NovaApplicationServiceProvider
                     MenuItem::resource(About::class),
                     MenuItem::resource(Blog::class),
                     MenuItem::resource(Contact::class),
+                    MenuItem::resource(Review::class),
                     MenuItem::externalLink('Permissions', '/dashboard/resources/permissions')
                         ->canSee(fn () => auth()->user()->can('viewAny', Permission::class)),
                     MenuItem::externalLink('Roles', '/dashboard/resources/roles')

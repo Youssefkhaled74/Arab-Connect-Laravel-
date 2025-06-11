@@ -24,31 +24,31 @@ use App\Http\Controllers\Api\SubCategoryController;
 */
 
 // Route::group(['middleware' => ['api', 'limitReq']], function ($router) {
-Route::group(['middleware' => ['api']], function ($router) {
-    Route::get('/return-true', function () {
-        return response()->json(false);
-    });
-    // package
-    Route::get('packages', [PackageController::class, 'index']);
-    Route::group(['prefix' => 'auth'], function ($router) {
-        Route::post('register', [AuthController::class, 'register']); // for user or vendor
-        Route::post('branches/store', [AuthController::class, 'addBranch'])->middleware('auth:api'); // for vendor only        Route::post('login', [AuthController::class, 'login']);
-        Route::post('login', [AuthController::class, 'login']);
-        Route::post('regenerate-code', [AuthController::class, 'regenerateCode']);
-        Route::post('email-check', [AuthController::class, 'emailCheck']);
-
-
-        Route::post('user/update-profile', [AuthController::class, 'updateProfile'])->middleware('auth:api');
-        Route::post('user/verify-new-email', [AuthController::class, 'verifyNewEmail'])->middleware('auth:api');
-
-        Route::post('send-reset-code', [AuthController::class, 'sendResetCode']);
-        Route::post('verify-reset-code', [AuthController::class, 'verifyResetCode']);
-        Route::post('reset', [AuthController::class, 'resetPassword']);
-        Route::post('change-password', [AuthController::class, 'changePassword'])->middleware('auth:api');
-    });
-
-    Route::get('payments/{page?}', [HomeController::class, 'payments']);
-    Route::get('branch/{id?}', [BranchController::class, 'branch']);
+    Route::group(['middleware' => ['api']], function ($router) {
+        Route::get('/return-true', function () {
+            return response()->json(false);
+        });
+        // package
+        Route::get('packages', [PackageController::class, 'index']);
+        Route::group(['prefix' => 'auth'], function ($router) {
+            Route::post('register', [AuthController::class, 'register']); // for user or vendor
+            Route::post('branches/store', [AuthController::class, 'addBranch'])->middleware('auth:api'); // for vendor only        Route::post('login', [AuthController::class, 'login']);
+            Route::post('login', [AuthController::class, 'login']);
+            Route::post('regenerate-code', [AuthController::class, 'regenerateCode']);
+            Route::post('email-check', [AuthController::class, 'emailCheck']);
+            
+            
+            Route::post('user/update-profile', [AuthController::class, 'updateProfile'])->middleware('auth:api');
+            Route::post('user/verify-new-email', [AuthController::class, 'verifyNewEmail'])->middleware('auth:api');
+            
+            Route::post('send-reset-code', [AuthController::class, 'sendResetCode']);
+            Route::post('verify-reset-code', [AuthController::class, 'verifyResetCode']);
+            Route::post('reset', [AuthController::class, 'resetPassword']);
+            Route::post('change-password', [AuthController::class, 'changePassword'])->middleware('auth:api');
+        });
+        
+        Route::get('payments/{page?}', [HomeController::class, 'payments']);
+        Route::get('branch/{id?}', [BranchController::class, 'branch']);
     Route::get('branches/details/{id?}', [BranchController::class, 'details']);
     Route::post('get/branches/{page?}', [BranchController::class, 'branches']);
     Route::get('categories/{page?}', [HomeController::class, 'categories']);
@@ -61,12 +61,13 @@ Route::group(['middleware' => ['api']], function ($router) {
     Route::get('nearest-branches', [HomePageController::class, 'nearestBranches']);
     Route::get('branches/search', [HomePageController::class, 'searchBranches']);
     Route::get('check-token', [HomePageController::class, 'checkToken']);
-
-
+    Route::middleware('auth:api')->post('branches/{branch}/review', [BranchController::class, 'addReview']);
+    
+    
     Route::post('contacts/store', [ContactController::class, 'store']);
-
+    
     Route::group(['middleware' => 'userActivation'], function ($router) {
-
+        
         Route::group(['prefix' => 'auth'], function ($router) {
             Route::get('/', [AuthController::class, 'me']);
             Route::get('user/branches', [AuthController::class, 'userBranches']);
@@ -81,17 +82,17 @@ Route::group(['middleware' => ['api']], function ($router) {
             Route::post('pay-package', [PaymentController::class, 'generatePaymentUrl'])->middleware('auth:api');
             Route::get('package-history/{limt}/{page?}', [PaymentController::class, 'history'])->middleware('auth:api');
         });
-
+        
         Route::group(['prefix' => 'favorites'], function ($router) {
             Route::get('get', [AuthController::class, 'getFavorites']);
             Route::post('add/{id?}', [AuthController::class, 'addFavorites']);
         });
-
+        
         Route::group(['prefix' => 'branches'], function ($router) {
             Route::post('store', [BranchController::class, 'store']);
             Route::post('update/{id?}', [BranchController::class, 'update']);
         });
-
+        
         Route::post('test', [HomeController::class, 'test']);
     });
 });

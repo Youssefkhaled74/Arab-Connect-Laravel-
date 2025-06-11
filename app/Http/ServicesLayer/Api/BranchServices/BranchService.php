@@ -55,11 +55,19 @@ class BranchService
         $branch = $this->branch->where('id', $id)->with([
             'payments',
             'days',
+            'reviews.user', // eager load user for each review
             'related_branches' => function ($query) use ($id) {
                 $query->whereNotIn('id', [$id]);
             }
         ])->first();
 
+        $hasReview = false;
+        if ($branch && auth()->check()) {
+            $hasReview = $branch->reviews()->where('user_id', auth()->id())->exists();
+        }
+
+        $averageStars = 0;
+        $reviews = [];
         if ($branch) {
             $branch->country_id = $branch->country_id ? (int) $branch->country_id : null;
             $branch->img = $branch->img ? env('APP_URL') . '/public/' . $branch->img : null;
@@ -72,9 +80,32 @@ class BranchService
                     return $related;
                 });
             }
+
+            // Get all reviews with user info
+            $reviews = $branch->reviews->map(function ($review) {
+                return [
+                    'id' => $review->id,
+                    'user' => [
+                        'id' => $review->user->id ?? null,
+                        'name' => $review->user->name ?? null,
+                    ],
+                    'stars' => $review->stars,
+                    'comment' => $review->comment,
+                    'created_at' => $review->created_at,
+                ];
+            });
+
+            // Calculate average stars
+            $averageStars = $branch->reviews->avg('stars') ?? 0;
         }
 
-        return $branch;
+        // Add review key, reviews, and average_stars to the response
+        $branchArray = $branch ? $branch->toArray() : [];
+        $branchArray['review'] = $hasReview;
+        $branchArray['reviews'] = $reviews;
+        $branchArray['average_stars'] = round($averageStars, 2);
+
+        return $branchArray;
     }
 
     public function store($request)

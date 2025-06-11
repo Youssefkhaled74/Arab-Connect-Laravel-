@@ -233,8 +233,17 @@ class Branch extends Model implements HasMedia
     {
         return $value ? Carbon::parse($value)->format('d M Y, h:i A') : null;
     }
+    /**
+     * Get the sub category associated with the Branch
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
     public function subCategory()
     {
         return $this->belongsTo(\App\Models\SubCategory::class, 'sub_category_id');
+    }
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
     }
 }
