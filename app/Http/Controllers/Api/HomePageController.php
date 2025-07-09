@@ -124,4 +124,23 @@ class HomePageController extends Controller
             return responseJson(404, 'Token invalid', false);
         }
     }
+
+
+    public function tabCategories()
+    {
+        try {
+            $categories = $this->categories->model::tab()->get();
+            return response()->json([
+                'status' => 200,
+                'msg' => 'success',
+                'data' => $categories
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 500,
+                'msg' => 'error',
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
 }

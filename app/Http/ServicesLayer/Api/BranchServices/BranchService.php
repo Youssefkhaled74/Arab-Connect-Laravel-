@@ -63,7 +63,9 @@ class BranchService
 
         $hasReview = false;
         if ($branch && auth()->check()) {
-            $hasReview = $branch->reviews()->where('user_id', auth()->id())->exists();
+            // Use the loaded collection, not the query
+            $hasReview = $branch->reviews->where('user_id', auth()->id())->isNotEmpty();
+            $reviews = true;
         }
 
         $averageStars = 0;

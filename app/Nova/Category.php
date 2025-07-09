@@ -61,21 +61,37 @@ class Category extends Resource
             ID::make()->sortable(),
             Text::make(__('name'), 'name')->sortable(),
             File::make(__('img'), 'img')
-            ->store(function (Request $request, $model) {
-                if ($request->hasFile('img')) {
-                    return uploadIamge($request->file('img'), 'categories');
-                }
-                return null;
-            })
-            ->preview(function ($value) {
-                return $value ? asset($value) : null;
-            })
-            ->download(function ($value) {
-                return $value ? asset($value) : null;
-            })
-            ->rules('image', 'max:5048'),
-        
+                ->store(function (Request $request, $model) {
+                    if ($request->hasFile('img')) {
+                        return uploadIamge($request->file('img'), 'categories');
+                    }
+                    return null;
+                })
+                ->preview(function ($value) {
+                    return $value ? asset($value) : null;
+                })
+                ->download(function ($value) {
+                    return $value ? asset($value) : null;
+                })
+                ->rules('image', 'max:5048'),
+
+            Boolean::make(__('tab'), 'tab')
+                ->trueValue(1)
+                ->falseValue(0)
+                ->sortable()
+                ->fillUsing(function ($request, $model, $attribute, $requestAttribute) {
+                    if ($request->get('tab') == 1) {
+                        $tabCount = \App\Models\Category::where('tab', 1)->count();
+                        if (($model->tab != 1 && $tabCount >= 3)) {
+                            throw \Illuminate\Validation\ValidationException::withMessages([
+                                'tab' => ['Only 3 categories can have tab enabled.'],
+                            ]);
+                        }
+                    }
+                    $model->tab = $request->get('tab', 0);
+                }),
             Boolean::make(__('is_activate'), 'is_activate')->sortable()->trueValue(1)->falseValue(0),
+
         ];
     }
 

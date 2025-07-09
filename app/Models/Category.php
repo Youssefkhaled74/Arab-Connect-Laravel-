@@ -11,7 +11,7 @@ class Category extends Model
 {
 	use HasRoles, LogsActivity;
 	protected $table = 'categories';
-	protected $fillable = ['name', 'img'];
+	protected $fillable = ['name', 'img', 'tab'];
 	public $timestamps = true;
 
 	protected static $logAttributes = ['*'];
@@ -75,7 +75,10 @@ class Category extends Model
 	{
 		return [];
 	}
-
+	public function scopeTab($query)
+	{
+		return $query->where('tab', 1);
+	}
 	public function branches()
 	{
 		return $this->hasMany(Branch::class, 'category_id')->unArchive()->published()->latest();
