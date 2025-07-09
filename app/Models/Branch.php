@@ -41,7 +41,9 @@ class Branch extends Model implements HasMedia
         'expire_at',
         'all_days',
         'three_month_email_sent_at',
-        'one_month_email_sent_at'
+        'one_month_email_sent_at',
+        'whatsapp_number',
+        'info',
     ];
 
     protected static $logAttributes = ['*'];

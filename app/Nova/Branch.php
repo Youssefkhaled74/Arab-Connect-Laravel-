@@ -75,6 +75,12 @@ class Branch extends Resource
             Text::make(__('mobile'), 'mobile')->sortable()
                 ->hideWhenCreating()
                 ->hideWhenUpdating(),
+            Text::make(__('whatsapp_number'), 'whatsapp_number')->sortable()
+                ->hideWhenCreating()
+                ->hideWhenUpdating(),
+            Text::make(__('info'), 'info')->sortable()
+                ->hideWhenCreating()
+                ->hideWhenUpdating(),
 
             Text::make(__('img'), 'img')
                 ->displayUsing(function ($value) {

@@ -78,6 +78,8 @@ class BranchController extends Controller
             'days.*.from' => 'nullable',
             'days.*.to' => 'nullable',
             "all_days" => "nullable|in:0,1",
+            "whatsapp_number" => "nullable|string|max:255",
+            "info" => "nullable|string|max:1000",
         ]);
         if ($validator->fails()) {
             return responseJson(400, "Bad Request", $validator->errors()->first());
@@ -116,6 +118,8 @@ class BranchController extends Controller
                 'days.*.from' => 'nullable',
                 'days.*.to' => 'nullable',
                 "all_days" => "nullable|in:0,1",
+                "whatsapp_number" => "nullable|string|max:255",
+                "info" => "nullable|string|max:1000",
             ]);
             if ($validator->fails()) {
                 return responseJson(400, "Bad Request", $validator->errors()->first());
